@@ -43,14 +43,6 @@ tmpDD        = appProcs + '/tmp'
 
 
 
-## procTable = tmpDir.split('/tmp/')[0] + '/R.running.procs/procTable'
-
-## Must ensure the procTable exists and has a valid value
-## No longer used
-# if not os.path.exists(procTable):
-#     fo = open(procTable, mode = 'w')
-#     fo.write('0')
-#     fo.close()
 
 
 def create_tmpDir(baseDir = tmpDD):
@@ -112,351 +104,6 @@ def kill_pid_machine(pid, machine):
     'as it says: to kill somehting somewhere'
     os.system('ssh ' + machine + ' "kill -s 9 ' + pid + '"')
 
-
-def results_print_general(outf, tmpDir, newDir, Rresults):
-    outf.write('<h2>Segmented data plots <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#output">(help)</a></h2> \n')
-    thumb(tmpDir, open(tmpDir + '/arrayNames', mode = 'r').read().split('\n')[0].split('\t'),
-          outf, maxsthumb = 350)
-    thumb(tmpDir, ['All_arrays'], outf, maxsthumb = 350)
-    outf.flush()
-    output_name = glob.glob(tmpDir + '/*.output.txt')[0].split('/')[-1]
-    outf.write('<p>Smoothed values for all genes/clones are available from file' +
-               ' <a href="./' + output_name + '">"' + output_name + '".</a></p>')
-    outf.write('<br />')
-    if os.path.exists(tmpDir + "/mcr.results.html"):
-        outf.write('<h2>Minimal common regions</h2>\n')
-        outf.write(open(tmpDir + "/mcr.results.html").read())
-    outf.write('<br />')
-    os.chdir(tmpDir)
-    ll1 = glob.glob('*.log')
-    for dname in ll1:
-        os.remove(dname)
-    outf.write('<hr> <a href="http://adacgh2.bioinfo.cnio.es/tmp/' +
-               newDir + '/all.results.tar.gz">Download</a> all figures and text results.')  
-    try:
-        outf.write(printPalsURLADaCGH(newDir))
-    except:
-        None
-         
-    outf.write("</body></html>")
-    outf.flush()
-    outf.close()
-    Rresults.close()
-    shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
-    os.system('tar -czf all.results.tar.gz * &')
-
-
-
-def printPalsURLADaCGH(newDir, application_url = "http://adacgh2.bioinfo.cnio.es"):
-    """ Based on Pomelo II's Send_to_Pals.cgi."""
-    f=open("idtype")
-    idtype = f.read().strip()
-    f.close()
-    f=open("organism")
-    organism = f.read().strip()
-    f.close()
-    if (idtype != "None" and organism != "None"):
-        url_org_id = "org=" + organism + "&idtype=" + idtype + "&"
-    else:
-        url_org_id = ""
-    gl_base = application_url + '/tmp/' + newDir + '/'
-    gl1 = gl_base + 'Lost_for_PaLS.txt'
-    gl2 = gl_base + 'Gained_for_PaLS.txt'
-    gl3 = gl_base + 'Gained_or_Lost_for_PaLS.txt'
-   
-    outstr0 = '<br /> <hr> ' + \
-              '<h3> Send results to <a href = "http://pals.bioinfo.cnio.es">' + \
-              '<IMG BORDER="0" SRC="../../palsfavicon40.png" align="middle"></a></h3>'
-   
-    outstr = outstr0 + \
-             '<p> Send set of <a href="http://pals.bioinfo.cnio.es?' + \
-             url_org_id + 'datafile=' + gl1 + '"> genes with copy number LOSS to PaLS</a></p>' + \
-             '<p> Send set of <a href="http://pals.bioinfo.cnio.es?' + \
-             url_org_id + 'datafile=' + gl2 + '"> genes with copy number GAIN to PaLS</a></p>' + \
-             '<p> Send set of <a href="http://pals.bioinfo.cnio.es?' + \
-             url_org_id + 'datafile=' + gl3 + '"> genes with copy number ALTERATION (either gain or loss) to PaLS</a></p>'
-    return(outstr)
-
-
-
-
-# def pdf2html(rootname, tmpDir, outf, maxsthumb = 350):
-#     """ From a multipage pdf obtain jpegs; the thumbnails are
-#     inserted in the webpage, the large jpeg viewed on clik.
-#     rootname is all the stuff before the `pdf',
-#     tmpDir is the directory where the files live, maxsthumb
-#     max size of thumbnail and outf the html file.
-#     We also decrease the size of the jpeg for showing.
-#     Finally, we add the generated jpeg to the compressed file"""
-
-#     mst = str(maxsthumb)
-#     mst2 = str(1600)
-#     os.chdir(tmpDir)
-#     os.system('/usr/bin/pdftoppm ' + rootname + '.pdf tmpppms')
-#     tmps = glob.glob('tmpppms*.ppm')
-#     for fignum in range(len(tmps)):
-#         os.system('/usr/bin/ppmtojpeg ' + tmps[fignum] + ' > ' + rootname + '.'
-#                   + str(fignum + 1) + '.jpeg')
-#         os.system('/usr/bin/convert -size ' + mst + 'x' +
-#                   mst + ' ' + rootname + '.' + str(fignum + 1) + '.jpeg' +
-#                   ' -resize ' + mst + 'x' + mst + ' thumb.' + rootname + '.'
-#                   + str(fignum + 1) + '.jpeg')
-#         os.system('/usr/bin/convert ' + rootname + '.' + str(fignum + 1) + '.jpeg' +
-#                   ' -resize ' + mst2 + 'x' + mst2 + ' ' + rootname + '.'
-#                   + str(fignum + 1) + '.jpeg')
-#         outf.write('<a href="' + rootname + '.' + str(fignum + 1) +
-#                    '.jpeg"> <img src="' + 'thumb.' + rootname + '.'
-#                   + str(fignum + 1) + '.jpeg"></a>\n')
-#     os.chdir('/http/adacgh2/cgi')
-
-
-
-def thumb(tmpDir, fnames, outf, maxsthumb = 350):
-    """ From a set of pngs, obtain thumbnails and
-    add links to html. The thumbnails are
-    inserted in the webpage, the large png viewed on clik.
-    tmpDir is the directory where the files live,
-    fnames is a list with the base file names to process
-    maxsthumb   max size of thumbnail and outf the html file.
-    """
-    mst = str(maxsthumb)
-    os.chdir(tmpDir)
-    for bname in fnames:
-        os.system(''.join(['/usr/bin/convert ', bname, '.png',
-                           ' -resize ', mst, 'x', mst, ' thumb.', 
-                           bname, '.jpeg']))
-        outf.write(''.join(['<a href="', bname, '.html"> <img alt="',
-	                    bname, '" title="', bname, '" src="thumb.',
-                            bname, '.jpeg"></a>']))
-    os.chdir('/http/adacgh2/cgi')
-
-
-def getQualifiedURL(uri = None):
-    """ Return a full URL starting with schema, servername and port.
-    
-    *uri* -- append this server-rooted uri (must start with a slash)
-    """
-    schema, stdport = ('http', '80')
-    host = os.environ.get('HTTP_HOST')
-    if not host:
-        host = os.environ.get('SERVER_NAME')
-        port = os.environ.get('SERVER_PORT', '80')
-        if port != stdport: host = host + ":" + port
-    result = "%s://%s" % (schema, host)
-    if uri: result = result + uri
-    return result
-
-def getScriptname():
-    """ Return te scriptname part of the URL."""
-    return os.environ.get('SCRIPT_NAME', '')
-
-
-# def getPathinfo():
-#     """ Return the remaining part of the URL. """
-#     pathinfo = os.environ.get('PATH_INFO', '')
-#     return pathinfo
-
-def getBaseURL():
-    """ Return a fully qualified URL to this script. """
-    return getQualifiedURL(getScriptname())
-
-
-def commonOutput():
-    print "Content-type: text/html\n\n"
-    print """
-    <html>
-    <head>
-    <title>ADaCGH results</title>
-    </head>
-    <body>
-    """
-    
-## to keep executing myself:
-def relaunchCGI():
-    issue_echo('inside relaunchCGI', tmpDir)
-
-    print "Content-type: text/html\n\n"
-    print """
-    <html>
-    <head>
-    """
-    print '<meta http-equiv="Refresh"'
-    print 'content="30; URL=' + getBaseURL() + '?newDir=' + newDir + '">'
-    print '<title>ADaCGH results</title>'
-    print '</head> <body>'
-    print '<p> This is an autorefreshing page; your results will eventually be displayed here.\n'
-    print 'If your browser does not autorefresh, the results will be kept for five days at</p>'
-    print '<p><a href="' + getBaseURL() + '?newDir=' + newDir + '">', 'http://adacgh2.bioinfo.cnio.es/tmp/'+ newDir + '/results.html</a>.' 
-    print '</p> </body> </html>'
-    issue_echo('end of relaunchCGI', tmpDir)
-    
-
-
-    
-
-## Output-generating functions
-def printErrorRun(errorfile):
-    Rresults = open(tmpDir + "/results.txt")
-    resultsFile = Rresults.read()
-    errormsg = open(errorfile).read()
-    outf = open(tmpDir + "/pre-results.html", mode = "w")
-    outf.write("<html><head><title>ADaCGH results </title></head><body>\n")
-    outf.write("<h1> ERROR: There was a problem with the R code </h1> \n")
-    outf.write("<p>  This could be a bug on our code, or a problem  ")
-    outf.write("with your data (that we hadn't tought of). Below is all the output from the execution ")
-    outf.write("of the run. Unless it is obvious to you that this is a fault of your data ")
-    outf.write("(and that there is no way we could have avoided the crash) ")
-    outf.write("please let us know so we can fix the problem. ")
-    outf.write("Please sed us this URL and the output below</p>")
-    outf.write("<p> This is the results file:<p>")
-    outf.write("<pre>")
-    outf.write(cgi.escape(resultsFile))
-    outf.write("</pre>")
-    outf.write("<p> And this is the error message:<p>")
-    outf.write("<pre>")
-    outf.write(cgi.escape(errormsg))
-    outf.write("</pre>")
-    outf.write("</body></html>")
-    outf.close()
-    Rresults.close()
-    shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
-
-
-def printOKRun():
-    issue_echo('starting printOKRun', tmpDir)
-    Rresults = open(tmpDir + "/results.txt")
-    resultsFile = Rresults.read()
-    outf = open(tmpDir + "/pre-results.html", mode = "w")
-    outf.write("<html><head><title>ADaCGH results</title></head><body>\n")
-
-    if os.path.exists(tmpDir + "/ErrorFigure.png"):
-        outf.write('<IMG BORDER="0" SRC="ErrorFigure.png">')
-        outf.write("<br /><br /> <hr>")
-        outf.write("<pre>")
-        outf.write('<br /><br /><h2> Results <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputText">(help)</a></h2> \n')
-        outf.write("<br /><br /> <hr>")
-        outf.write(cgi.escape(resultsFile))
-        outf.write("</pre>")
-        outf.write("</body></html>")
-        outf.close()
-        Rresults.close()
-        shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
-    else:
-        outf.write('<br /><br /><center><h2> ADaCGH Results <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputText">(help)</a></center></h2> \n')
-        outf.write(open(tmpDir + "/results.for.html").read())
-        outf.write('<br />')
-        outf.write('<hr>')
-        outf.write('<h3> Genes/clones per chromosome </h3>')
-        outf.write(open(tmpDir + "/clones.per.chrom.html").read())
-        outf.write('<br />')
-        outf.write('<h3> Summary statistics before centering </h3>')
-        outf.write(open(tmpDir + "/stats.before.centering.html").read())
-        outf.write('<br />')
-        outf.write('<h3> Summary statistics: subject/array by chromosome before centering </h3>')
-        outf.write('<h4> Mean </h4>')
-        outf.write(open(tmpDir + "/stats.subj.by.chrom.mean.BEFORE.html").read())
-        outf.write('<br />')
-        outf.write('<h4> Median </h4>')
-        outf.write(open(tmpDir + "/stats.subj.by.chrom.median.BEFORE.html").read())
-        outf.write('<br />')
-        outf.write('<h4> MAD </h4>')
-        outf.write(open(tmpDir + "/stats.subj.by.chrom.mad.BEFORE.html").read())
-        outf.write('<hr>')
-        outf.write('<br />')
-        outf.write('<h3> Summary statistics after centering </h3>')
-        outf.write(open(tmpDir + "/stats.after.centering.html").read())
-        outf.write('<br />')
-        outf.write('<h3> Summary statistics: subject/array by chromosome after centering </h3>')
-        outf.write('<h4> Mean </h4>')
-        outf.write(open(tmpDir + "/stats.subj.by.chrom.mean.AFTER.html").read())
-        outf.write('<br />')
-        outf.write('<h4> Median </h4>')
-        outf.write(open(tmpDir + "/stats.subj.by.chrom.median.AFTER.html").read())
-        outf.write('<br />')
-        outf.write('<h4> MAD </h4>')
-        outf.write(open(tmpDir + "/stats.subj.by.chrom.mad.AFTER.html").read())
-        outf.write('<br />')
-        ## The following is common to all
-        outf.flush()
-
-        methodUsed = open(tmpDir + '/methodaCGH').read()
-        if (methodUsed == 'PSW') or (methodUsed == 'PSW\n'):
-            arrayNames = open(tmpDir + '/arrayNames', mode = 'r').read().split('\n')[0].split('\t')
-            outf.write('<h2>Island plots, gains <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputPSW">(help)</a></h2> \n')
-            outf.write('<p>Click on thumbnails to expand.</p>')
-            gains_fig_list = [''.join(['Gains.', aname]) for aname in arrayNames]
-            thumb(tmpDir, gains_fig_list, outf, maxsthumb = 350)
-            outf.write('<br />')
-            
-            outf.write('<h2>Island plots, losses <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputPSW">(help)</a></h2> \n')
-            outf.write('<p>Click on thumbnails to expand.</p>')
-            loss_fig_list = [''.join(['Losses.', aname]) for aname in arrayNames]
-            thumb(tmpDir, loss_fig_list, outf, maxsthumb = 350)
-            outf.write('<br />')
-
-            outf.write('<p>Smith-Waterman results for all genes/clones are available from files ' +
-                       '<a href="./Gains.Price.Smith.Waterman.results.txt">"Gains.Price.Smith.Waterman.results.txt"</a>' +
-                       ' <a href="./Losses.Price.Smith.Waterman.results.txt">"Losses.Price.Smith.Waterman.results.txt."</a></p>')
-
-            ##if os.path.exists(tmpDir + '/f1.R'): os.remove(tmpDir + '/f1.R')
-            if os.path.exists(tmpDir + '/ace-figs.R'): os.remove(tmpDir + '/ace-figs.R')
-            ##if os.path.exists(tmpDir + '/f1.Rout'): os.remove(tmpDir + '/f1.Rout')
-            #if os.path.exists(tmpDir + '/.RData'): os.remove(tmpDir + '/.RData')
-            ## allResults = tarfile.open(tmpDir + '/all.results.tar.gz', 'w:gz')
-            os.chdir(tmpDir)
-            ll1 = glob.glob('*.log')
-            for dname in ll1:
-                os.remove(dname)
-            outf.write('<hr> <a href="http://adacgh2.bioinfo.cnio.es/tmp/' +
-                       newDir + '/all.results.tar.gz">Download</a> all figures and text results.')  
-
-            outf.write(printPalsURLADaCGH(newDir))
-
-            outf.write("</body></html>")
-            outf.close()
-            Rresults.close()
-            shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
-            os.system('tar -czf all.results.tar.gz * &')
-        elif (methodUsed == 'ACE') or (methodUsed == 'ACE\n'):
-            outf.write('<h2>FDR table</h2>')
-            acefdrtable = open(tmpDir + "/ace.fdrtable.html")
-            acefdr = acefdrtable.read()
-            acefdrtable.close()
-            outf.write(acefdr)
-            outf.write('<form action="http://adacgh2.bioinfo.cnio.es/cgi-bin/ace.cgi" method="GET">\n')
-            outf.write('<input type="hidden" NAME="newDir" VALUE="' + newDir + '">')
-            currentfdr = str(open(tmpDir + '/aceFDR').readline())
-            outf.write('<br><input type="TEXT" name="fdrace" value="' +
-                       currentfdr + '" size="10"  maxlength="10">\n')
-            outf.write('<input value="Submit" type = "SUBMIT"> (Change the desired FDR and Press "Submit" to obtain figures with new FDR)')
-            outf.write('<h2>Segmented plots</h2><p>Click on thumbnails to expand.</p>')
-            thumb(tmpDir,  open(tmpDir + '/arrayNames', mode = 'r').read().split('\n')[0].split('\t'), outf, maxsthumb = 350)
-            thumb(tmpDir, ['All_arrays'], outf, maxsthumb = 350)
-            outf.write('<p>Inferred gains and losses available from file' +
-                       '<a href="./ACE.output.FDR=' + currentfdr + '.txt">' +
-                       '"ACE.output.FDR=' + currentfdr + '.txt"</a></p>')
-            if os.path.exists(tmpDir + '/rerunACE.Rout'): os.remove(tmpDir + '/rerunACE.Rout')
-            ##if os.path.exists(tmpDir + '/f1.R'): os.remove(tmpDir + '/f1.R')
-            if os.path.exists(tmpDir + '/rerunACE.R'): os.remove(tmpDir + '/rerunACE.R')
-            ##if os.path.exists(tmpDir + '/f1.Rout'): os.remove(tmpDir + '/f1.Rout')
-            #if os.path.exists(tmpDir + '/.RData'): os.remove(tmpDir + '/.RData')
-            ## allResults = tarfile.open(tmpDir + '/all.results.tar.gz', 'w:gz')
-            os.chdir(tmpDir)
-            ll1 = glob.glob('*.log')
-            for dname in ll1:
-                os.remove(dname)
-            outf.write('<hr> <a href="http://adacgh2.bioinfo.cnio.es/tmp/' +
-                       newDir + '/all.results.tar.gz">Download</a> all figures and text results.')  
-
-            outf.write(printPalsURLADaCGH(newDir))
-
-            outf.write("</body></html>")
-            outf.close()
-            Rresults.close()
-            shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
-            os.system('tar -czf all.results.tar.gz * &')
-        else:
-            results_print_general(outf, tmpDir, newDir, Rresults)
 
 
 
@@ -797,39 +444,6 @@ def master_out_of_time(time_start):
         return False
         
 
-# def add_to_proc_table(max_num_procs, add_procs = 1):
-#     """Try to add add_procs to the process table. If it can
-#     returns OK, otherwise (e.g., too many procs) return Failed.
-#     Locking would be great ... but it does not work over NFS. """
-    
-#     fo = open(procTable, mode = 'r+')
-#     fcntl.flock(fo.fileno(), fcntl.LOCK_EX)
-#     currentProcs = int(fo.read())
-#     if currentProcs >= max_num_procs:
-#         fcntl.flock(fo.fileno(), fcntl.LOCK_UN)
-#         fo.close()
-#         return 'Failed'
-#     else:
-#         fo.seek(0)
-#         fo.write(str(currentProcs + add_procs))
-#         fcntl.flock(fo.fileno(), fcntl.LOCK_UN)
-#         fo.close()
-#         return 'OK'
-
-# def add_to_proc_table(max_num_procs, add_procs = 1):
-#     """Try to add add_procs to the process table. If it can
-#     returns OK, otherwise (e.g., too many procs) return Failed."""
-#     fo = open(procTable, mode = 'r+')
-#     currentProcs = int(fo.read())
-#     if currentProcs >= max_num_procs:
-#         fo.close()
-#         return 'Failed'
-#     else:
-#         fo.seek(0)
-#         fo.write(str(currentProcs + add_procs))
-#         fo.close()
-#         return 'OK'
-
 
 
 
@@ -897,88 +511,487 @@ print "hola"
 issue_echo('starting', tmpDir)
 
 
+       
+NCPU, MAX_NUM_PROCS = set_defaults_lam(tmpDir)
 
+try:
+    counterApplications.add_to_log('ADaCGH2', tmpDir, socket.gethostname())
+except:
+    None
+
+issue_echo('at 2', tmpDir)
+
+lamSuffix = generate_lam_suffix(tmpDir)
+
+issue_echo('at 3', tmpDir)
+
+time.sleep(random.uniform(0.1, 15)) ## Break ties if starting at identical times
+
+check_room = my_queue(MAX_NUM_PROCS)
+issue_echo('after check_room', tmpDir)
+
+if check_room == 'Failed':
+    printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
+    sys.exit()
+
+issue_echo('before lamboot', tmpDir)
+lamboot(lamSuffix, NCPU)
+issue_echo('after lamboot', tmpDir)
+
+counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH2', tmpDir,
+                                          socket.gethostname())
+
+Rrun(tmpDir, lamSuffix)
         
-# NCPU, MAX_NUM_PROCS = set_defaults_lam(tmpDir)
+time_start = time.time()
+time.sleep(TIME_BETWEEN_CHECKS + random.uniform(0.1, 3))
 
-# try:
-#     counterApplications.add_to_log('ADaCGH2', tmpDir, socket.gethostname())
-# except:
-#     None
+count_mpi_crash = 0
 
-# issue_echo('at 2', tmpDir)
+while True:
+    if did_run_out_of_time(tmpDir, R_MAX_time):
+        issue_echo('run out of time', tmpDir)
+        cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
+        printRKilled()
+        break
+    elif finished_ok(tmpDir):
+        issue_echo('finished OK', tmpDir)
+        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
+        printOKRun()
+        break
+    elif halted(tmpDir):
+        issue_echo('halted', tmpDir)
+        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
+        printErrorRun(tmpDir + '/Status.msg')
+        break
+    elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
+        issue_echo('R crash in slaves', tmpDir)
+        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
+        printErrorRun(did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1])
+        break
+    elif master_out_of_time(time_start):
+        issue_echo('master out of time', tmpDir)
+        cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
+        printRKilled()
+        break
+    elif did_mpi_crash(tmpDir, machine_root = 'karl'):
+        count_mpi_crash += 1
+        counterApplications.add_to_MPIErrorLog('ADaCGH2',
+                                               tmpDir, socket.gethostname(),
+                                               message = 'MPI crash')
+        if count_mpi_crash > MAX_MPI_CRASHES:
+            printMPIerror(tmpDir, MAX_MPI_CRASHES)
+            cleanups(tmpDir, newDir, 'MPIerror.pid.txt', lamSuffix)
+            break
+        else:
+            recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS,
+                                   lamSuffix,
+                                   machine_root = 'karl')
+    else:
+        lam_crash_log(tmpDir, 'NoCrash') ## if we get here, this much we know
+    time.sleep(TIME_BETWEEN_CHECKS)
 
-# lamSuffix = generate_lam_suffix(tmpDir)
 
-# issue_echo('at 3', tmpDir)
 
-# time.sleep(random.uniform(0.1, 15)) ## Break ties if starting at identical times
+issue_echo('at the very end!', tmpDir)
 
-# check_room = my_queue(MAX_NUM_PROCS)
-# issue_echo('after check_room', tmpDir)
 
-# if check_room == 'Failed':
-#     printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
-#     sys.exit()
 
-# issue_echo('before lamboot', tmpDir)
-# lamboot(lamSuffix, NCPU)
-# issue_echo('after lamboot', tmpDir)
 
-# counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH2', tmpDir,
-#                                           socket.gethostname())
 
-# Rrun(tmpDir, lamSuffix)
-        
-# time_start = time.time()
-# time.sleep(TIME_BETWEEN_CHECKS + random.uniform(0.1, 3))
 
-# count_mpi_crash = 0
 
-# while True:
-#     if did_run_out_of_time(tmpDir, R_MAX_time):
-#         issue_echo('run out of time', tmpDir)
-#         cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
-#         printRKilled()
-#         break
-#     elif finished_ok(tmpDir):
-#         issue_echo('finished OK', tmpDir)
-#         cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-#         printOKRun()
-#         break
-#     elif halted(tmpDir):
-#         issue_echo('halted', tmpDir)
-#         cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-#         printErrorRun(tmpDir + '/Status.msg')
-#         break
-#     elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
-#         issue_echo('R crash in slaves', tmpDir)
-#         cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-#         printErrorRun(did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1])
-#         break
-#     elif master_out_of_time(time_start):
-#         issue_echo('master out of time', tmpDir)
-#         cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
-#         printRKilled()
-#         break
-#     elif did_mpi_crash(tmpDir, machine_root = 'karl'):
-#         count_mpi_crash += 1
-#         counterApplications.add_to_MPIErrorLog('ADaCGH2',
-#                                                tmpDir, socket.gethostname(),
-#                                                message = 'MPI crash')
-#         if count_mpi_crash > MAX_MPI_CRASHES:
-#             printMPIerror(tmpDir, MAX_MPI_CRASHES)
-#             cleanups(tmpDir, newDir, 'MPIerror.pid.txt', lamSuffix)
-#             break
-#         else:
-#             recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS,
-#                                    lamSuffix,
-#                                    machine_root = 'karl')
+
+
+
+
+# def add_to_proc_table(max_num_procs, add_procs = 1):
+#     """Try to add add_procs to the process table. If it can
+#     returns OK, otherwise (e.g., too many procs) return Failed.
+#     Locking would be great ... but it does not work over NFS. """
+    
+#     fo = open(procTable, mode = 'r+')
+#     fcntl.flock(fo.fileno(), fcntl.LOCK_EX)
+#     currentProcs = int(fo.read())
+#     if currentProcs >= max_num_procs:
+#         fcntl.flock(fo.fileno(), fcntl.LOCK_UN)
+#         fo.close()
+#         return 'Failed'
 #     else:
-#         lam_crash_log(tmpDir, 'NoCrash') ## if we get here, this much we know
-#     time.sleep(TIME_BETWEEN_CHECKS)
+#         fo.seek(0)
+#         fo.write(str(currentProcs + add_procs))
+#         fcntl.flock(fo.fileno(), fcntl.LOCK_UN)
+#         fo.close()
+#         return 'OK'
+
+# def add_to_proc_table(max_num_procs, add_procs = 1):
+#     """Try to add add_procs to the process table. If it can
+#     returns OK, otherwise (e.g., too many procs) return Failed."""
+#     fo = open(procTable, mode = 'r+')
+#     currentProcs = int(fo.read())
+#     if currentProcs >= max_num_procs:
+#         fo.close()
+#         return 'Failed'
+#     else:
+#         fo.seek(0)
+#         fo.write(str(currentProcs + add_procs))
+#         fo.close()
+#         return 'OK'
+
+## procTable = tmpDir.split('/tmp/')[0] + '/R.running.procs/procTable'
+
+## Must ensure the procTable exists and has a valid value
+## No longer used
+# if not os.path.exists(procTable):
+#     fo = open(procTable, mode = 'w')
+#     fo.write('0')
+#     fo.close()
 
 
 
-# issue_echo('at the very end!', tmpDir)
+
+# def results_print_general(outf, tmpDir, newDir, Rresults):
+#     outf.write('<h2>Segmented data plots <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#output">(help)</a></h2> \n')
+#     thumb(tmpDir, open(tmpDir + '/arrayNames', mode = 'r').read().split('\n')[0].split('\t'),
+#           outf, maxsthumb = 350)
+#     thumb(tmpDir, ['All_arrays'], outf, maxsthumb = 350)
+#     outf.flush()
+#     output_name = glob.glob(tmpDir + '/*.output.txt')[0].split('/')[-1]
+#     outf.write('<p>Smoothed values for all genes/clones are available from file' +
+#                ' <a href="./' + output_name + '">"' + output_name + '".</a></p>')
+#     outf.write('<br />')
+#     if os.path.exists(tmpDir + "/mcr.results.html"):
+#         outf.write('<h2>Minimal common regions</h2>\n')
+#         outf.write(open(tmpDir + "/mcr.results.html").read())
+#     outf.write('<br />')
+#     os.chdir(tmpDir)
+#     ll1 = glob.glob('*.log')
+#     for dname in ll1:
+#         os.remove(dname)
+#     outf.write('<hr> <a href="http://adacgh2.bioinfo.cnio.es/tmp/' +
+#                newDir + '/all.results.tar.gz">Download</a> all figures and text results.')  
+#     try:
+#         outf.write(printPalsURLADaCGH(newDir))
+#     except:
+#         None
+         
+#     outf.write("</body></html>")
+#     outf.flush()
+#     outf.close()
+#     Rresults.close()
+#     shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+#     os.system('tar -czf all.results.tar.gz * &')
+
+
+
+# def printPalsURLADaCGH(newDir, application_url = "http://adacgh2.bioinfo.cnio.es"):
+#     """ Based on Pomelo II's Send_to_Pals.cgi."""
+#     f=open("idtype")
+#     idtype = f.read().strip()
+#     f.close()
+#     f=open("organism")
+#     organism = f.read().strip()
+#     f.close()
+#     if (idtype != "None" and organism != "None"):
+#         url_org_id = "org=" + organism + "&idtype=" + idtype + "&"
+#     else:
+#         url_org_id = ""
+#     gl_base = application_url + '/tmp/' + newDir + '/'
+#     gl1 = gl_base + 'Lost_for_PaLS.txt'
+#     gl2 = gl_base + 'Gained_for_PaLS.txt'
+#     gl3 = gl_base + 'Gained_or_Lost_for_PaLS.txt'
+   
+#     outstr0 = '<br /> <hr> ' + \
+#               '<h3> Send results to <a href = "http://pals.bioinfo.cnio.es">' + \
+#               '<IMG BORDER="0" SRC="../../palsfavicon40.png" align="middle"></a></h3>'
+   
+#     outstr = outstr0 + \
+#              '<p> Send set of <a href="http://pals.bioinfo.cnio.es?' + \
+#              url_org_id + 'datafile=' + gl1 + '"> genes with copy number LOSS to PaLS</a></p>' + \
+#              '<p> Send set of <a href="http://pals.bioinfo.cnio.es?' + \
+#              url_org_id + 'datafile=' + gl2 + '"> genes with copy number GAIN to PaLS</a></p>' + \
+#              '<p> Send set of <a href="http://pals.bioinfo.cnio.es?' + \
+#              url_org_id + 'datafile=' + gl3 + '"> genes with copy number ALTERATION (either gain or loss) to PaLS</a></p>'
+#     return(outstr)
+
+
+
+
+# # def pdf2html(rootname, tmpDir, outf, maxsthumb = 350):
+# #     """ From a multipage pdf obtain jpegs; the thumbnails are
+# #     inserted in the webpage, the large jpeg viewed on clik.
+# #     rootname is all the stuff before the `pdf',
+# #     tmpDir is the directory where the files live, maxsthumb
+# #     max size of thumbnail and outf the html file.
+# #     We also decrease the size of the jpeg for showing.
+# #     Finally, we add the generated jpeg to the compressed file"""
+
+# #     mst = str(maxsthumb)
+# #     mst2 = str(1600)
+# #     os.chdir(tmpDir)
+# #     os.system('/usr/bin/pdftoppm ' + rootname + '.pdf tmpppms')
+# #     tmps = glob.glob('tmpppms*.ppm')
+# #     for fignum in range(len(tmps)):
+# #         os.system('/usr/bin/ppmtojpeg ' + tmps[fignum] + ' > ' + rootname + '.'
+# #                   + str(fignum + 1) + '.jpeg')
+# #         os.system('/usr/bin/convert -size ' + mst + 'x' +
+# #                   mst + ' ' + rootname + '.' + str(fignum + 1) + '.jpeg' +
+# #                   ' -resize ' + mst + 'x' + mst + ' thumb.' + rootname + '.'
+# #                   + str(fignum + 1) + '.jpeg')
+# #         os.system('/usr/bin/convert ' + rootname + '.' + str(fignum + 1) + '.jpeg' +
+# #                   ' -resize ' + mst2 + 'x' + mst2 + ' ' + rootname + '.'
+# #                   + str(fignum + 1) + '.jpeg')
+# #         outf.write('<a href="' + rootname + '.' + str(fignum + 1) +
+# #                    '.jpeg"> <img src="' + 'thumb.' + rootname + '.'
+# #                   + str(fignum + 1) + '.jpeg"></a>\n')
+# #     os.chdir('/http/adacgh2/cgi')
+
+
+
+# def thumb(tmpDir, fnames, outf, maxsthumb = 350):
+#     """ From a set of pngs, obtain thumbnails and
+#     add links to html. The thumbnails are
+#     inserted in the webpage, the large png viewed on clik.
+#     tmpDir is the directory where the files live,
+#     fnames is a list with the base file names to process
+#     maxsthumb   max size of thumbnail and outf the html file.
+#     """
+#     mst = str(maxsthumb)
+#     os.chdir(tmpDir)
+#     for bname in fnames:
+#         os.system(''.join(['/usr/bin/convert ', bname, '.png',
+#                            ' -resize ', mst, 'x', mst, ' thumb.', 
+#                            bname, '.jpeg']))
+#         outf.write(''.join(['<a href="', bname, '.html"> <img alt="',
+# 	                    bname, '" title="', bname, '" src="thumb.',
+#                             bname, '.jpeg"></a>']))
+#     os.chdir('/http/adacgh2/cgi')
+
+
+# def getQualifiedURL(uri = None):
+#     """ Return a full URL starting with schema, servername and port.
+    
+#     *uri* -- append this server-rooted uri (must start with a slash)
+#     """
+#     schema, stdport = ('http', '80')
+#     host = os.environ.get('HTTP_HOST')
+#     if not host:
+#         host = os.environ.get('SERVER_NAME')
+#         port = os.environ.get('SERVER_PORT', '80')
+#         if port != stdport: host = host + ":" + port
+#     result = "%s://%s" % (schema, host)
+#     if uri: result = result + uri
+#     return result
+
+# def getScriptname():
+#     """ Return te scriptname part of the URL."""
+#     return os.environ.get('SCRIPT_NAME', '')
+
+
+# # def getPathinfo():
+# #     """ Return the remaining part of the URL. """
+# #     pathinfo = os.environ.get('PATH_INFO', '')
+# #     return pathinfo
+
+# def getBaseURL():
+#     """ Return a fully qualified URL to this script. """
+#     return getQualifiedURL(getScriptname())
+
+
+# def commonOutput():
+#     print "Content-type: text/html\n\n"
+#     print """
+#     <html>
+#     <head>
+#     <title>ADaCGH results</title>
+#     </head>
+#     <body>
+#     """
+    
+# ## to keep executing myself:
+# def relaunchCGI():
+#     issue_echo('inside relaunchCGI', tmpDir)
+
+#     print "Content-type: text/html\n\n"
+#     print """
+#     <html>
+#     <head>
+#     """
+#     print '<meta http-equiv="Refresh"'
+#     print 'content="30; URL=' + getBaseURL() + '?newDir=' + newDir + '">'
+#     print '<title>ADaCGH results</title>'
+#     print '</head> <body>'
+#     print '<p> This is an autorefreshing page; your results will eventually be displayed here.\n'
+#     print 'If your browser does not autorefresh, the results will be kept for five days at</p>'
+#     print '<p><a href="' + getBaseURL() + '?newDir=' + newDir + '">', 'http://adacgh2.bioinfo.cnio.es/tmp/'+ newDir + '/results.html</a>.' 
+#     print '</p> </body> </html>'
+#     issue_echo('end of relaunchCGI', tmpDir)
+    
+
+
+    
+
+# ## Output-generating functions
+# def printErrorRun(errorfile):
+#     Rresults = open(tmpDir + "/results.txt")
+#     resultsFile = Rresults.read()
+#     errormsg = open(errorfile).read()
+#     outf = open(tmpDir + "/pre-results.html", mode = "w")
+#     outf.write("<html><head><title>ADaCGH results </title></head><body>\n")
+#     outf.write("<h1> ERROR: There was a problem with the R code </h1> \n")
+#     outf.write("<p>  This could be a bug on our code, or a problem  ")
+#     outf.write("with your data (that we hadn't tought of). Below is all the output from the execution ")
+#     outf.write("of the run. Unless it is obvious to you that this is a fault of your data ")
+#     outf.write("(and that there is no way we could have avoided the crash) ")
+#     outf.write("please let us know so we can fix the problem. ")
+#     outf.write("Please sed us this URL and the output below</p>")
+#     outf.write("<p> This is the results file:<p>")
+#     outf.write("<pre>")
+#     outf.write(cgi.escape(resultsFile))
+#     outf.write("</pre>")
+#     outf.write("<p> And this is the error message:<p>")
+#     outf.write("<pre>")
+#     outf.write(cgi.escape(errormsg))
+#     outf.write("</pre>")
+#     outf.write("</body></html>")
+#     outf.close()
+#     Rresults.close()
+#     shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+
+
+# def printOKRun():
+#     issue_echo('starting printOKRun', tmpDir)
+#     Rresults = open(tmpDir + "/results.txt")
+#     resultsFile = Rresults.read()
+#     outf = open(tmpDir + "/pre-results.html", mode = "w")
+#     outf.write("<html><head><title>ADaCGH results</title></head><body>\n")
+
+#     if os.path.exists(tmpDir + "/ErrorFigure.png"):
+#         outf.write('<IMG BORDER="0" SRC="ErrorFigure.png">')
+#         outf.write("<br /><br /> <hr>")
+#         outf.write("<pre>")
+#         outf.write('<br /><br /><h2> Results <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputText">(help)</a></h2> \n')
+#         outf.write("<br /><br /> <hr>")
+#         outf.write(cgi.escape(resultsFile))
+#         outf.write("</pre>")
+#         outf.write("</body></html>")
+#         outf.close()
+#         Rresults.close()
+#         shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+#     else:
+#         outf.write('<br /><br /><center><h2> ADaCGH Results <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputText">(help)</a></center></h2> \n')
+#         outf.write(open(tmpDir + "/results.for.html").read())
+#         outf.write('<br />')
+#         outf.write('<hr>')
+#         outf.write('<h3> Genes/clones per chromosome </h3>')
+#         outf.write(open(tmpDir + "/clones.per.chrom.html").read())
+#         outf.write('<br />')
+#         outf.write('<h3> Summary statistics before centering </h3>')
+#         outf.write(open(tmpDir + "/stats.before.centering.html").read())
+#         outf.write('<br />')
+#         outf.write('<h3> Summary statistics: subject/array by chromosome before centering </h3>')
+#         outf.write('<h4> Mean </h4>')
+#         outf.write(open(tmpDir + "/stats.subj.by.chrom.mean.BEFORE.html").read())
+#         outf.write('<br />')
+#         outf.write('<h4> Median </h4>')
+#         outf.write(open(tmpDir + "/stats.subj.by.chrom.median.BEFORE.html").read())
+#         outf.write('<br />')
+#         outf.write('<h4> MAD </h4>')
+#         outf.write(open(tmpDir + "/stats.subj.by.chrom.mad.BEFORE.html").read())
+#         outf.write('<hr>')
+#         outf.write('<br />')
+#         outf.write('<h3> Summary statistics after centering </h3>')
+#         outf.write(open(tmpDir + "/stats.after.centering.html").read())
+#         outf.write('<br />')
+#         outf.write('<h3> Summary statistics: subject/array by chromosome after centering </h3>')
+#         outf.write('<h4> Mean </h4>')
+#         outf.write(open(tmpDir + "/stats.subj.by.chrom.mean.AFTER.html").read())
+#         outf.write('<br />')
+#         outf.write('<h4> Median </h4>')
+#         outf.write(open(tmpDir + "/stats.subj.by.chrom.median.AFTER.html").read())
+#         outf.write('<br />')
+#         outf.write('<h4> MAD </h4>')
+#         outf.write(open(tmpDir + "/stats.subj.by.chrom.mad.AFTER.html").read())
+#         outf.write('<br />')
+#         ## The following is common to all
+#         outf.flush()
+
+#         methodUsed = open(tmpDir + '/methodaCGH').read()
+#         if (methodUsed == 'PSW') or (methodUsed == 'PSW\n'):
+#             arrayNames = open(tmpDir + '/arrayNames', mode = 'r').read().split('\n')[0].split('\t')
+#             outf.write('<h2>Island plots, gains <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputPSW">(help)</a></h2> \n')
+#             outf.write('<p>Click on thumbnails to expand.</p>')
+#             gains_fig_list = [''.join(['Gains.', aname]) for aname in arrayNames]
+#             thumb(tmpDir, gains_fig_list, outf, maxsthumb = 350)
+#             outf.write('<br />')
+            
+#             outf.write('<h2>Island plots, losses <a href="http://adacgh2.bioinfo.cnio.es/help/adacgh-help.html#outputPSW">(help)</a></h2> \n')
+#             outf.write('<p>Click on thumbnails to expand.</p>')
+#             loss_fig_list = [''.join(['Losses.', aname]) for aname in arrayNames]
+#             thumb(tmpDir, loss_fig_list, outf, maxsthumb = 350)
+#             outf.write('<br />')
+
+#             outf.write('<p>Smith-Waterman results for all genes/clones are available from files ' +
+#                        '<a href="./Gains.Price.Smith.Waterman.results.txt">"Gains.Price.Smith.Waterman.results.txt"</a>' +
+#                        ' <a href="./Losses.Price.Smith.Waterman.results.txt">"Losses.Price.Smith.Waterman.results.txt."</a></p>')
+
+#             ##if os.path.exists(tmpDir + '/f1.R'): os.remove(tmpDir + '/f1.R')
+#             if os.path.exists(tmpDir + '/ace-figs.R'): os.remove(tmpDir + '/ace-figs.R')
+#             ##if os.path.exists(tmpDir + '/f1.Rout'): os.remove(tmpDir + '/f1.Rout')
+#             #if os.path.exists(tmpDir + '/.RData'): os.remove(tmpDir + '/.RData')
+#             ## allResults = tarfile.open(tmpDir + '/all.results.tar.gz', 'w:gz')
+#             os.chdir(tmpDir)
+#             ll1 = glob.glob('*.log')
+#             for dname in ll1:
+#                 os.remove(dname)
+#             outf.write('<hr> <a href="http://adacgh2.bioinfo.cnio.es/tmp/' +
+#                        newDir + '/all.results.tar.gz">Download</a> all figures and text results.')  
+
+#             outf.write(printPalsURLADaCGH(newDir))
+
+#             outf.write("</body></html>")
+#             outf.close()
+#             Rresults.close()
+#             shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+#             os.system('tar -czf all.results.tar.gz * &')
+#         elif (methodUsed == 'ACE') or (methodUsed == 'ACE\n'):
+#             outf.write('<h2>FDR table</h2>')
+#             acefdrtable = open(tmpDir + "/ace.fdrtable.html")
+#             acefdr = acefdrtable.read()
+#             acefdrtable.close()
+#             outf.write(acefdr)
+#             outf.write('<form action="http://adacgh2.bioinfo.cnio.es/cgi-bin/ace.cgi" method="GET">\n')
+#             outf.write('<input type="hidden" NAME="newDir" VALUE="' + newDir + '">')
+#             currentfdr = str(open(tmpDir + '/aceFDR').readline())
+#             outf.write('<br><input type="TEXT" name="fdrace" value="' +
+#                        currentfdr + '" size="10"  maxlength="10">\n')
+#             outf.write('<input value="Submit" type = "SUBMIT"> (Change the desired FDR and Press "Submit" to obtain figures with new FDR)')
+#             outf.write('<h2>Segmented plots</h2><p>Click on thumbnails to expand.</p>')
+#             thumb(tmpDir,  open(tmpDir + '/arrayNames', mode = 'r').read().split('\n')[0].split('\t'), outf, maxsthumb = 350)
+#             thumb(tmpDir, ['All_arrays'], outf, maxsthumb = 350)
+#             outf.write('<p>Inferred gains and losses available from file' +
+#                        '<a href="./ACE.output.FDR=' + currentfdr + '.txt">' +
+#                        '"ACE.output.FDR=' + currentfdr + '.txt"</a></p>')
+#             if os.path.exists(tmpDir + '/rerunACE.Rout'): os.remove(tmpDir + '/rerunACE.Rout')
+#             ##if os.path.exists(tmpDir + '/f1.R'): os.remove(tmpDir + '/f1.R')
+#             if os.path.exists(tmpDir + '/rerunACE.R'): os.remove(tmpDir + '/rerunACE.R')
+#             ##if os.path.exists(tmpDir + '/f1.Rout'): os.remove(tmpDir + '/f1.Rout')
+#             #if os.path.exists(tmpDir + '/.RData'): os.remove(tmpDir + '/.RData')
+#             ## allResults = tarfile.open(tmpDir + '/all.results.tar.gz', 'w:gz')
+#             os.chdir(tmpDir)
+#             ll1 = glob.glob('*.log')
+#             for dname in ll1:
+#                 os.remove(dname)
+#             outf.write('<hr> <a href="http://adacgh2.bioinfo.cnio.es/tmp/' +
+#                        newDir + '/all.results.tar.gz">Download</a> all figures and text results.')  
+
+#             outf.write(printPalsURLADaCGH(newDir))
+
+#             outf.write("</body></html>")
+#             outf.close()
+#             Rresults.close()
+#             shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+#             os.system('tar -czf all.results.tar.gz * &')
+#         else:
+#             results_print_general(outf, tmpDir, newDir, Rresults)
 
