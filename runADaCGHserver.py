@@ -26,11 +26,16 @@ TIME_BETWEEN_CHECKS = 45
 MAX_MPI_CRASHES = 20
 
 
-tmpDir = sys.argv[1]
-ROOT_TMP_DIR = "/http/adacgh2/www/tmp/"
-newDir = tmpDir.replace(ROOT_TMP_DIR, "")
-runningProcs = tmpDir.split('/tmp/')[0] + '/R.running.procs/'
+#tmpDir = sys.argv[1]
+inputDir = sys.argv[1]
 
+#ROOT_TMP_DIR = "/http/adacgh2/www/tmp/"
+#newDir = tmpDir.replace(ROOT_TMP_DIR, "")
+
+appDir       = "/http/adacgh-server"
+appProcs     = appDir + '/runs-tmp'
+runningProcs = appProcs + '/R.running.procs'
+tmpDD        = appProcs + '/tmp'
 
 ## I think we no longer check tmpDir is OK, because this is not launched
 ## by the user, byt by the signsR.cgi file.
@@ -46,6 +51,16 @@ runningProcs = tmpDir.split('/tmp/')[0] + '/R.running.procs/'
 #     fo = open(procTable, mode = 'w')
 #     fo.write('0')
 #     fo.close()
+
+
+def create_tmpDir(baseDir = tmpDD):
+    """ Create a new directory with appropriate permissions"""
+    newDir = str(int(time.time())) + str(os.getpid()) + str(random.randint(1, 10000000))
+    tmpDir = baseDir + "/" + newDir
+    os.mkdir(tmpDir)
+    os.chmod(tmpDir, 0700)
+    return((newDir, tmpDir))
+
 
 def set_defaults_lam(tmpDir):
     """ Set defaults for lamboot and Rslaves and number procs
@@ -530,7 +545,7 @@ def lamboot(lamSuffix, ncpu, runningProcs = runningProcs):
     issue_echo('newDir is ' + newDir, tmpDir)
     issue_echo('lamSuffix ' + lamSuffix, tmpDir)
     issue_echo('runningProcs ' + runningProcs, tmpDir)
-    sentinel = os.open(''.join([runningProcs, 'sentinel.lam.', newDir, '.', lamSuffix]),
+    sentinel = os.open(''.join([runningProcs, '/sentinel.lam.', newDir, '.', lamSuffix]),
                        os.O_RDWR | os.O_CREAT | os.O_NDELAY)
     issue_echo('before fullCommand inside lamboot', tmpDir)
     fullCommand = 'export LAM_MPI_SESSION_SUFFIX="' + lamSuffix + \
@@ -589,13 +604,13 @@ def lam_crash_log(tmpDir, value):
               '" >> ' + tmpDir + '/recoverFromLAMCrash.out')
     
 def recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS, lamSuffix,
-                           runningProcs = runningProcs,
+                           runningProcs= runningProcs,
                            machine_root = 'karl'):
     """Check if lam crashed during R run. If it did, restart R
     after possibly rebooting the lam universe.
     Leave a trace of what happened."""
     
-    os.remove(''.join([runningProcs, 'sentinel.lam.', newDir, '.', lamSuffix]))
+    os.remove(''.join([runningProcs, '/sentinel.lam.', newDir, '.', lamSuffix]))
     del_mpi_logs(tmpDir, machine_root)
     lam_crash_log(tmpDir, 'Crashed')
     ## We need to halt the universe, or else we can keep a lamd with no R hanging from
@@ -731,7 +746,7 @@ def did_run_out_of_time(tmpDir, R_MAX_time):
 
 def cleanups(tmpDir, newDir, newnamepid,
              lamSuffix,
-             runningProcs = runningProcs,
+             runningProcs= runningProcs,
              appl = 'adacgh2'):
     """ Clean up actions; kill lam, delete running.procs files, clean process table."""
     lamenv = open(tmpDir + "/lamSuffix", mode = "r").readline()
@@ -754,7 +769,7 @@ def cleanups(tmpDir, newDir, newnamepid,
     except:
         None
     try:
-        os.remove(''.join([runningProcs, 'sentinel.lam.', newDir, '.', lamSuffix]))
+        os.remove(''.join([runningProcs, '/sentinel.lam.', newDir, '.', lamSuffix]))
     except:
         None
 
@@ -848,7 +863,7 @@ def my_queue(MAX_NUM_PROCS,
             out_value = 'Failed'
             break
         num_lamd = int(os.popen('pgrep -u www-data lamd | wc').readline().split()[0])
-        num_sentinel = int(len(glob.glob(''.join([runningProcs, 'sentinel.lam.*']))))
+        num_sentinel = int(len(glob.glob(''.join([runningProcs, '/sentinel.lam.*']))))
         if (num_lamd < (MAX_NUM_PROCS + ADD_PROCS)) and (num_sentinel < MAX_NUM_PROCS):
             issue_echo('     OK; num_lamd = ' + str(num_lamd) + \
                        '; num_sentinel = ' + str(num_sentinel), tmpDir)
@@ -873,89 +888,97 @@ def generate_lam_suffix(tmpDir):
 
 ## Starting. First, the very first run.
 
+
+(newDir, tmpDir) = create_tmpDir()
+print "hola"
+
+
+
 issue_echo('starting', tmpDir)
 
+
+
         
-NCPU, MAX_NUM_PROCS = set_defaults_lam(tmpDir)
+# NCPU, MAX_NUM_PROCS = set_defaults_lam(tmpDir)
 
-try:
-    counterApplications.add_to_log('ADaCGH2', tmpDir, socket.gethostname())
-except:
-    None
+# try:
+#     counterApplications.add_to_log('ADaCGH2', tmpDir, socket.gethostname())
+# except:
+#     None
 
-issue_echo('at 2', tmpDir)
+# issue_echo('at 2', tmpDir)
 
-lamSuffix = generate_lam_suffix(tmpDir)
+# lamSuffix = generate_lam_suffix(tmpDir)
 
-issue_echo('at 3', tmpDir)
+# issue_echo('at 3', tmpDir)
 
-time.sleep(random.uniform(0.1, 15)) ## Break ties if starting at identical times
+# time.sleep(random.uniform(0.1, 15)) ## Break ties if starting at identical times
 
-check_room = my_queue(MAX_NUM_PROCS)
-issue_echo('after check_room', tmpDir)
+# check_room = my_queue(MAX_NUM_PROCS)
+# issue_echo('after check_room', tmpDir)
 
-if check_room == 'Failed':
-    printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
-    sys.exit()
+# if check_room == 'Failed':
+#     printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
+#     sys.exit()
 
-issue_echo('before lamboot', tmpDir)
-lamboot(lamSuffix, NCPU)
-issue_echo('after lamboot', tmpDir)
+# issue_echo('before lamboot', tmpDir)
+# lamboot(lamSuffix, NCPU)
+# issue_echo('after lamboot', tmpDir)
 
-counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH2', tmpDir,
-                                          socket.gethostname())
+# counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH2', tmpDir,
+#                                           socket.gethostname())
 
-Rrun(tmpDir, lamSuffix)
+# Rrun(tmpDir, lamSuffix)
         
-time_start = time.time()
-time.sleep(TIME_BETWEEN_CHECKS + random.uniform(0.1, 3))
+# time_start = time.time()
+# time.sleep(TIME_BETWEEN_CHECKS + random.uniform(0.1, 3))
 
-count_mpi_crash = 0
+# count_mpi_crash = 0
 
-while True:
-    if did_run_out_of_time(tmpDir, R_MAX_time):
-        issue_echo('run out of time', tmpDir)
-        cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
-        printRKilled()
-        break
-    elif finished_ok(tmpDir):
-        issue_echo('finished OK', tmpDir)
-        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-        printOKRun()
-        break
-    elif halted(tmpDir):
-        issue_echo('halted', tmpDir)
-        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-        printErrorRun(tmpDir + '/Status.msg')
-        break
-    elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
-        issue_echo('R crash in slaves', tmpDir)
-        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-        printErrorRun(did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1])
-        break
-    elif master_out_of_time(time_start):
-        issue_echo('master out of time', tmpDir)
-        cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
-        printRKilled()
-        break
-    elif did_mpi_crash(tmpDir, machine_root = 'karl'):
-        count_mpi_crash += 1
-        counterApplications.add_to_MPIErrorLog('ADaCGH2',
-                                               tmpDir, socket.gethostname(),
-                                               message = 'MPI crash')
-        if count_mpi_crash > MAX_MPI_CRASHES:
-            printMPIerror(tmpDir, MAX_MPI_CRASHES)
-            cleanups(tmpDir, newDir, 'MPIerror.pid.txt', lamSuffix)
-            break
-        else:
-            recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS,
-                                   lamSuffix,
-                                   machine_root = 'karl')
-    else:
-        lam_crash_log(tmpDir, 'NoCrash') ## if we get here, this much we know
-    time.sleep(TIME_BETWEEN_CHECKS)
+# while True:
+#     if did_run_out_of_time(tmpDir, R_MAX_time):
+#         issue_echo('run out of time', tmpDir)
+#         cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
+#         printRKilled()
+#         break
+#     elif finished_ok(tmpDir):
+#         issue_echo('finished OK', tmpDir)
+#         cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
+#         printOKRun()
+#         break
+#     elif halted(tmpDir):
+#         issue_echo('halted', tmpDir)
+#         cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
+#         printErrorRun(tmpDir + '/Status.msg')
+#         break
+#     elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
+#         issue_echo('R crash in slaves', tmpDir)
+#         cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
+#         printErrorRun(did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1])
+#         break
+#     elif master_out_of_time(time_start):
+#         issue_echo('master out of time', tmpDir)
+#         cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
+#         printRKilled()
+#         break
+#     elif did_mpi_crash(tmpDir, machine_root = 'karl'):
+#         count_mpi_crash += 1
+#         counterApplications.add_to_MPIErrorLog('ADaCGH2',
+#                                                tmpDir, socket.gethostname(),
+#                                                message = 'MPI crash')
+#         if count_mpi_crash > MAX_MPI_CRASHES:
+#             printMPIerror(tmpDir, MAX_MPI_CRASHES)
+#             cleanups(tmpDir, newDir, 'MPIerror.pid.txt', lamSuffix)
+#             break
+#         else:
+#             recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS,
+#                                    lamSuffix,
+#                                    machine_root = 'karl')
+#     else:
+#         lam_crash_log(tmpDir, 'NoCrash') ## if we get here, this much we know
+#     time.sleep(TIME_BETWEEN_CHECKS)
 
 
 
-issue_echo('at the very end!', tmpDir)
+# issue_echo('at the very end!', tmpDir)
 
