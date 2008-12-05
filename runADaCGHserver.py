@@ -41,6 +41,16 @@ tmpDD        = appProcs + '/tmp'
 ## by the user, byt by the signsR.cgi file.
 
 
+###########3 this we need to do. Was done by adacghR.cgi
+## Launch the lam checking program 
+run_and_check = os.spawnv(os.P_NOWAIT, '/http/adacgh2/cgi/runAndCheck.py',
+                      ['', tmpDir])
+os.system('echo "' + str(run_and_check) + ' ' + socket.gethostname() +\
+           '"> ' + tmpDir + '/run_and_checkPID')
+
+
+
+
 
 
 
