@@ -334,16 +334,17 @@ def Rrun(tmpDir, lamSuffix):
 ##               '; sleep 1; /http/R-custom/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> Status.msg &'
     Rtorun = os.system(Rcommand)
     
+### FIXME: something potentially weird here:
+    ## R redirects standard error to R_Status.txt
+    ## but R also writes to that very file when it exits. (caughtOurError, .Last, etc).
+    ## this makes life simpler for "status_run" but ...
+    ## but then, a normal execution should leave nothing in stderr.
 
 
 
 def status_run(tmpDir):
     """ Read R_Status.txt and return status."""
     status_r = open(tmpDir + '/R_Status.txt').read()
-    if status_r.find('Running\n') > -1:
-        return('Running')
-    if status_r.find('Normal termination\n') > -1:
-        return('R_NormalTermination')
     if status_r.find('Execution halted\n') > -1:
         return('R_ExecutionHalted')
     if status_r.find('Other Error\n') > -1:
@@ -354,6 +355,10 @@ def status_run(tmpDir):
         return('R_Our_Error')
     if status_r.find('Rmpi error\n') > -1:
         return('Error_Rmpi')
+    if status_r.find('Running\n') > -1:
+        return('Running')
+    if status_r.find('Normal termination\n') > -1:
+        return('R_NormalTermination')
 #     if status_r.find('Run out of time; killed\n') > -1:
 #         return('Out_of_time')
 
@@ -633,7 +638,7 @@ while True:
         break
 
     elif master_out_of_time(time_start):
-        issue_echo('master out of time', tmpDir)
+        issue_echo('Master out of time', tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
         writeStatusServer('ERROR!!!')
         writeErrorMessage('Master out of time', 'NULL')

@@ -42,7 +42,7 @@
     ## the next four lines are a way to ensure that the OS writes
     ## a file that could be immediately read by Python to see
     ## if we are done
-    status <- file("Status.msg", "w")
+    status <- file("R_Status.txt", "w")
     cat("Normal termination\n", file = status)
     flush(status)
     close(status)
@@ -117,7 +117,7 @@ readOptions <- function(x) {
 
 version
 system("hostname")
-cat("\nRunning\n", file = "Status.msg")
+cat("\nRunning\n", file = "R_Status.txt")
 
 checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
 
