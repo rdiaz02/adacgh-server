@@ -83,55 +83,18 @@ doCheckpoint <- function(num) {
 ## }
 
 caughtUserError <- function(message) {
-    GDD("ErrorFigure.png", width = png.width,
-           height = png.height, 
-           ps = png.pointsize)
-##           family = png.family)
-    plot(x = c(0, 1), y = c(0, 1),
-         type = "n", axes = FALSE, xlab = "", ylab = "")
-    box()
-    text(0.5, 0.7, "There was a PROBLEM with your data.")
-    text(0.5, 0.5,
-    "Please read carefully the error messages,")
-    
-    text(0.5, 0.3, "fix the problem, and try again.")
-    dev.off()
-    sink(file = "results.txt")
+    message <- paste("There was a problem with something you did.\n",
+                     "Check the error message, your data and options and try again.\n",
+                     message)
+    sink(file = "R_Error_msg.txt")
     cat(message)
     sink()
-    sink(file = "exitStatus")
-    cat("Error\n\n")
-    cat(message)
+    sink(file = "R_Status.txt")
+    cat("User Error\n\n")
     sink()
-    quit(save = "no", status = 11, runLast = TRUE)
+    quit(save = "no", status = 11, runLast = FALSE)
 }
 
-## FIXME: this is here and in the package code. Can we eliminate
-##        from here? But it gives a clear message structure: User and
-##        ours.
-caughtOurError <- function(message) {
-    GDD("ErrorFigure.png", width = png.width,
-           height = png.height, 
-           ps = png.pointsize)
-##           family = png.family)
-    plot(x = c(0, 1), y = c(0, 1),
-         type = "n", axes = FALSE, xlab = "", ylab = "")
-    box()
-    text(0.5, 0.7, "There was a PROBLEM with the code.")
-    text(0.5, 0.5,
-    "Please let us know (send us the URL),")
-    
-    text(0.5, 0.3, "so that we can fix it.")
-    dev.off()
-    sink(file = "results.txt")
-    cat(message)
-    sink()
-    sink(file = "exitStatus")
-    cat("Error\n\n")
-    cat(message)
-    sink()
-    quit(save = "no", status = 11, runLast = TRUE)
-}
 
 
 readOptions <- function(x) {
@@ -210,9 +173,9 @@ sink()
 methodaCGH <- scan("methodaCGH", what = "", n = 1)
 
 
-assign(".__ADaCGH_WEB_APPL", TRUE)
-print("testing existence of indicator")
-print(exists(".__ADaCGH_WEB_APPL"))
+assign(".__ADaCGH_SERVER_APPL", TRUE)
+## print("testing existence of indicator")
+## print(exists(".__ADaCGH_WEB_APPL"))
 library(Hmisc, verbose = FALSE)
 library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
 ## but we must mask certain defs. in waveslim. So load
@@ -731,7 +694,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                 End = positions.merge1$end,
                                 MidPoint = positions.merge1$MidPoint)
         print("testing existence of indicator before gains")
-        print(exists(".__ADaCGH_WEB_APPL"))
+        print(exists(".__ADaCGH_SERVER_APPL"))
         
         ## save.image()
         doCheckpoint(2)
@@ -761,7 +724,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
     if(checkpoint.num < 4) {
 
         print("testing existence of indicator before losses")
-        print(exists(".__ADaCGH_WEB_APPL"))
+        print(exists(".__ADaCGH_SERVER_APPL"))
         ## Losses
         trythis <- try({
             out.losses <-

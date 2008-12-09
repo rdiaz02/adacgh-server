@@ -7,6 +7,10 @@
 ## try to use add_to_MPIErrorLog and similar mechanisms for logging
 ## MPI attempts
 
+### FIXME: MAX_DURATION_TRY: set a constant, and use that. now, we set (two) different
+##         values inside the code itself
+
+
 import sys
 import os
 import cgi 
@@ -37,32 +41,44 @@ appProcs     = appDir + '/runs-tmp'
 runningProcs = appProcs + '/R.running.procs'
 tmpDD        = appProcs + '/tmp'
 
-## I think we no longer check tmpDir is OK, because this is not launched
-## by the user, byt by the signsR.cgi file.
-
-
-###########3 this we need to do. Was done by adacghR.cgi
-## Launch the lam checking program 
-run_and_check = os.spawnv(os.P_NOWAIT, '/http/adacgh2/cgi/runAndCheck.py',
-                      ['', tmpDir])
-os.system('echo "' + str(run_and_check) + ' ' + socket.gethostname() +\
+os.system('echo "' + str(os.getpid()) + ' ' + socket.gethostname() +\
            '"> ' + tmpDir + '/run_and_checkPID')
 
 
+def writeStatusServer(message, outfile = 'Status_Server_Run.msg'):
+    ## we take tmpDir as a given! from local envir
+    statusfile = open(tmpDir + '/' + outfile, mode = 'w')
+    statusfile.write(message)
+    statusfile.close()
 
 
+def writeErrorMessage(message = '', infile = 'R_Error_msg.txt',
+                      outfile = 'Error_msg.txt'):
+    """ Write the error message for users by 
+    concatenating the message and the infile."""
+    if (message == '') and (infile != 'NULL'):
+        shutil.copyfile(tmpDir + '/' + infile,
+                        tmpDir + '/Error_msg.txt')
+    elif (message != '') and (infile == 'NULL'):
+        errorfile = open(tmpDir + '/' + outfile, mode = 'w')
+        errorfile.write(message)
+        errorfile.close()
+    elif (message != '') and (infile != 'NULL'):
+        errorfile = open(tmpDir + '/' + outfile, mode = 'w')
+        infr = open(tmpDir + '/' + infile, mode = 'r').read()
+        errorfile.write(message +'\n\n\n' + infr)
+        errorfile.close()
+    elif (message == '') and (infile == 'NULL'):
+        pass
 
-
-
-
+    
 def create_tmpDir(baseDir = tmpDD):
     """ Create a new directory with appropriate permissions"""
     newDir = str(int(time.time())) + str(os.getpid()) + str(random.randint(1, 10000000))
     tmpDir = baseDir + "/" + newDir
     os.mkdir(tmpDir)
     os.chmod(tmpDir, 0700)
-    return((newDir, tmpDir))
-
+    return (newDir, tmpDir)
 
 def set_defaults_lam(tmpDir):
     """ Set defaults for lamboot and Rslaves and number procs
@@ -72,13 +88,13 @@ def set_defaults_lam(tmpDir):
     in the lamb-host file. max_num_procs is the maximum number of simultaneous
     adacgh processes running at any time.
     We return the tuple ncpu, max_num_procs"""
-    datsize1 = 0
-    datsize2 = 0
-    if os.path.exists(tmpDir + '/acghData'):
-        datsize1 = int(os.popen('ls ' + tmpDir + '/acghData -sk').read().split()[0])
-    if os.path.exists(tmpDir + '/acghAndPosition'):
-        datsize2 = int(os.popen('ls ' + tmpDir + '/acghAndPosition -sk').read().split()[0])
-    datsize = max(datsize2, datsize1)
+#     datsize1 = 0
+#     datsize2 = 0
+#     if os.path.exists(tmpDir + '/acghData'):
+#         datsize1 = int(os.popen('ls ' + tmpDir + '/acghData -sk').read().split()[0])
+#     if os.path.exists(tmpDir + '/acghAndPosition'):
+#         datsize2 = int(os.popen('ls ' + tmpDir + '/acghAndPosition -sk').read().split()[0])
+    datsize = int(os.popen('ls ' + tmpDir + '/inputData.RData -sk').read().split()[0])
     if datsize < 2000:
         return (2, 3)
     elif datsize < 6000:
@@ -87,16 +103,6 @@ def set_defaults_lam(tmpDir):
         return (2, 1)
     else:
         return (1, 1) 
-
-def collectZombies(k = 10):
-    """ Make sure there are no zombies in the process tables.
-    This is probably an overkill, but works.
-    """
-    for nk in range(k):
-        try:
-            tmp = os.waitpid(-1, os.WNOHANG)
-        except:
-            None
 
 
 def issue_echo(fecho, tmpDir):
@@ -114,6 +120,32 @@ def kill_pid_machine(pid, machine):
     'as it says: to kill somehting somewhere'
     os.system('ssh ' + machine + ' "kill -s 9 ' + pid + '"')
 
+
+def printErrorRun(errorfile):
+    Rresults = open(tmpDir + "/results.txt")
+    resultsFile = Rresults.read()
+    errormsg = open(errorfile).read()
+    outf = open(tmpDir + "/pre-results.html", mode = "w")
+    outf.write("<html><head><title>ADaCGH results </title></head><body>\n")
+    outf.write("<h1> ERROR: There was a problem with the R code </h1> \n")
+    outf.write("<p>  This could be a bug on our code, or a problem  ")
+    outf.write("with your data (that we hadn't tought of). Below is all the output from the execution ")
+    outf.write("of the run. Unless it is obvious to you that this is a fault of your data ")
+    outf.write("(and that there is no way we could have avoided the crash) ")
+    outf.write("please let us know so we can fix the problem. ")
+    outf.write("Please sed us this URL and the output below</p>")
+    outf.write("<p> This is the results file:<p>")
+    outf.write("<pre>")
+    outf.write(cgi.escape(resultsFile))
+    outf.write("</pre>")
+    outf.write("<p> And this is the error message:<p>")
+    outf.write("<pre>")
+    outf.write(cgi.escape(errormsg))
+    outf.write("</pre>")
+    outf.write("</body></html>")
+    outf.close()
+    Rresults.close()
+    shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
 
 
 
@@ -140,7 +172,7 @@ def printRKilled():
     shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
 
 
-def printMPIerror(tmpDir, numtries, application = 'ADaCGH2'):
+def logMPIerror(tmpDir, numtries, application = 'ADaCGH-server'):
     if not os.path.exists('/http/mpi.log/' + application + 'ErrorLog'):
         os.system('touch /http/mpi.log/' + application + 'ErrorLog')
     outlog = open('/http/mpi.log/' + application + 'ErrorLog', mode = 'a')
@@ -148,50 +180,50 @@ def printMPIerror(tmpDir, numtries, application = 'ADaCGH2'):
                  time.ctime(time.time()) +
                  ' Directory: ' + tmpDir + '\n')
     outlog.close()
-    out1 = open(tmpDir + "/natural.death.pid.txt", mode = "w")
-    out2 = open(tmpDir + "/kill.pid.txt", mode = "w")
-    out1.write('MPI initialization error!!')
-    out2.write('MPI initialization error!!')
-    out1.close()
-    out2.close()
-    outf = open(tmpDir + "/pre-results.html", mode = "w")
-    outf.write("<html><head><title> MPI initialization problem.</title></head><body>\n")
-    outf.write("<h1> MPI initialization problem.</h1>")
-    outf.write("<p> After " + str(numtries) + " attempts we have been unable to ")
-    outf.write(" initialize MPI.</p>")
-    outf.write("<p> We will be notified of this error, but we would also ")
-    outf.write("appreciate if you can let us know of any circumstances or problems ")
-    outf.write("so we can diagnose the error.</p>")
-    outf.write("</body></html>")
-    outf.close()
-    shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+#     out1 = open(tmpDir + "/natural.death.pid.txt", mode = "w")
+#     out2 = open(tmpDir + "/kill.pid.txt", mode = "w")
+#     out1.write('MPI initialization error!!')
+#     out2.write('MPI initialization error!!')
+#     out1.close()
+#     out2.close()
+#     outf = open(tmpDir + "/pre-results.html", mode = "w")
+#     outf.write("<html><head><title> MPI initialization problem.</title></head><body>\n")
+#     outf.write("<h1> MPI initialization problem.</h1>")
+#     outf.write("<p> After " + str(numtries) + " attempts we have been unable to ")
+#     outf.write(" initialize MPI.</p>")
+#     outf.write("<p> We will be notified of this error, but we would also ")
+#     outf.write("appreciate if you can let us know of any circumstances or problems ")
+#     outf.write("so we can diagnose the error.</p>")
+#     outf.write("</body></html>")
+#     outf.close()
+#     shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
 
 
-def printMPITooBusy(tmpDir, MAX_DURATION_TRY, application = 'ADaCGH2'):
+def logMPITooBusy(tmpDir, MAX_DURATION_TRY, application = 'ADaCGH-server'):
     if not os.path.exists('/http/mpi.log/' + application + 'ErrorLog'):
         os.system('touch /http/mpi.log/' + application + 'ErrorLog')
     outlog = open('/http/mpi.log/' + application + 'ErrorLog', mode = 'a')
     outlog.write('MPI too busy on ' + time.ctime(time.time()) +
                  ' Directory: ' + tmpDir + '\n')
     outlog.close()
-    out1 = open(tmpDir + "/natural.death.pid.txt", mode = "w")
-    out2 = open(tmpDir + "/kill.pid.txt", mode = "w")
-    out1.write('Cannot start!!')
-    out2.write('Cannot start!!')
-    out1.close()
-    out2.close()
-    outf = open(tmpDir + "/pre-results.html", mode = "w")
-    outf.write("<html><head><title> Cannot start application.</title></head><body>\n")
-    outf.write("<h1> Cannot start application.</h1>")
-    outf.write("<p> After " + str(MAX_DURATION_TRY) + " seconds we have been unable to ")
-    outf.write(" start the application.</p>")
-    outf.write("<p> Most likely this means the servers are too busy and many ")
-    outf.write("are running ahead of yours. ")
-    outf.write("Please try again later. You can also get in touch with us ")
-    outf.write("if you think this is our error.</p>")
-    outf.write("</body></html>")
-    outf.close()
-    shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
+#     out1 = open(tmpDir + "/natural.death.pid.txt", mode = "w")
+#     out2 = open(tmpDir + "/kill.pid.txt", mode = "w")
+#     out1.write('Cannot start!!')
+#     out2.write('Cannot start!!')
+#     out1.close()
+#     out2.close()
+#     outf = open(tmpDir + "/pre-results.html", mode = "w")
+#     outf.write("<html><head><title> Cannot start application.</title></head><body>\n")
+#     outf.write("<h1> Cannot start application.</h1>")
+#     outf.write("<p> After " + str(MAX_DURATION_TRY) + " seconds we have been unable to ")
+#     outf.write(" start the application.</p>")
+#     outf.write("<p> Most likely this means the servers are too busy and many ")
+#     outf.write("are running ahead of yours. ")
+#     outf.write("Please try again later. You can also get in touch with us ")
+#     outf.write("if you think this is our error.</p>")
+#     outf.write("</body></html>")
+#     outf.close()
+#     shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
 
 
 
@@ -298,7 +330,7 @@ def Rrun(tmpDir, lamSuffix):
     """ Launch R, after setting the lam stuff."""
     Rcommand = 'export LAM_MPI_SESSION_SUFFIX="' + lamSuffix + \
                '"; cd ' + tmpDir + \
-               '; sleep 1; /http/R-patched4/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> Status.msg &'
+               '; sleep 1; /http/R-patched4/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> R_Status.txt &'
 ##               '; sleep 1; /http/R-custom/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> Status.msg &'
     Rtorun = os.system(Rcommand)
     
@@ -306,18 +338,24 @@ def Rrun(tmpDir, lamSuffix):
 
 
 def status_run(tmpDir):
-    """ Read Status.msg and return status."""
-    status_r = open(tmpDir + '/Status.msg').read()
-    if status_r.find('Normal termination\n') > -1:
-        return('FinishedOK')
-    if status_r.find('Execution halted\n') > -1:
-        return('Halted')
+    """ Read R_Status.txt and return status."""
+    status_r = open(tmpDir + '/R_Status.txt').read()
     if status_r.find('Running\n') > -1:
         return('Running')
+    if status_r.find('Normal termination\n') > -1:
+        return('R_NormalTermination')
+    if status_r.find('Execution halted\n') > -1:
+        return('R_ExecutionHalted')
+    if status_r.find('Other Error\n') > -1:
+        return('R_Other_Error')
+    if status_r.find('User Error\n') > -1:
+        return('R_User_Error')
+    if status_r.find('Our Error\n') > -1:
+        return('R_Our_Error')
     if status_r.find('Rmpi error\n') > -1:
-        return('Error_mpi')
-    if status_r.find('Run out of time; killed\n') > -1:
-        return('Out_of_time')
+        return('Error_Rmpi')
+#     if status_r.find('Run out of time; killed\n') > -1:
+#         return('Out_of_time')
 
 
 def did_R_crash_in_slaves(tmpDir, machine_root = 'karl'):
@@ -345,7 +383,7 @@ def did_lam_crash(tmpDir, machine_root = 'karl'):
     OTHER_LAM_MSGS = 'Call stack within LAM:'
     lam_logs = glob.glob(tmpDir + '/' + machine_root + '*.*.*.log')
     in_error_msg = int(os.popen('grep MPI_Error_string ' + \
-                                tmpDir + '/Status.msg | wc').readline().split()[0])
+                                tmpDir + '/R_Status.txt | wc').readline().split()[0])
 #     no_universe = int(os.popen('grep "Running serial version of papply" ' + \
 #                                tmpDir + '/f1.Rout | wc').readline().split()[0])
 ## We do NOT want that, because sometimes a one node universe is legitimate!!!
@@ -370,7 +408,7 @@ def did_lam_crash(tmpDir, machine_root = 'karl'):
     
 def did_mpi_crash(tmpDir, machine_root = 'karl'):
     """ Either Rmpi or LAM crashed"""
-    if (status_run(tmpDir) == 'Error_mpi') or \
+    if (status_run(tmpDir) == 'Error_Rmpi') or \
        did_lam_crash(tmpDir, machine_root):
         return True
     else:
@@ -380,7 +418,7 @@ def del_mpi_logs(tmpDir, machine_root = 'karl'):
     """ Delete logs from LAM/MPI."""
     lam_logs = glob.glob(tmpDir + '/' + machine_root + '*.*.*.log')
     try:
-        os.system('rm ' + tmpDir + '/Status.msg')
+        os.system('rm ' + tmpDir + '/R_Status.txt')
     except:
         None
     try:
@@ -404,7 +442,7 @@ def did_run_out_of_time(tmpDir, R_MAX_time):
 def cleanups(tmpDir, newDir, newnamepid,
              lamSuffix,
              runningProcs= runningProcs,
-             appl = 'adacgh2'):
+             newnamepid = 'finished_pid.txt'):
     """ Clean up actions; kill lam, delete running.procs files, clean process table."""
     lamenv = open(tmpDir + "/lamSuffix", mode = "r").readline()
     rinfo = open(tmpDir + '/current_R_proc_info', mode = 'r').readline().split()
@@ -418,7 +456,7 @@ def cleanups(tmpDir, newDir, newnamepid,
     except:
         None
     try:
-        os.system('rm /http/' + appl + '/www/R.running.procs/R.' + newDir + '*')
+        os.system('rm ' + runningProcs + '/R.' + newDir + '*')
     except:
         None
     try:
@@ -431,19 +469,19 @@ def cleanups(tmpDir, newDir, newnamepid,
         None
 
 
-def finished_ok(tmpDir):
-    """ check ok termination and act accordingly."""
-    if status_run(tmpDir) == 'FinishedOK':
-        return True
-    else:
-        return False
+# def finished_ok(tmpDir):
+#     """ check ok termination and act accordingly."""
+#     if status_run(tmpDir) == 'FinishedOK':
+#         return True
+#     else:
+#         return False
 
-def halted(tmpDir):
-    """ check halted execution and act accordingly."""
-    if status_run(tmpDir) == 'Halted':
-        return True
-    else:
-        return False
+# def halted(tmpDir):
+#     """ check halted execution and act accordingly."""
+#     if status_run(tmpDir) == 'Halted':
+#         return True
+#     else:
+#         return False
 
 
 def master_out_of_time(time_start):
@@ -514,18 +552,16 @@ def generate_lam_suffix(tmpDir):
 
 
 (newDir, tmpDir) = create_tmpDir()
-print "hola"
-
-
+print tmpDir
 
 issue_echo('starting', tmpDir)
-
+writeStatusServer('Running')
 
        
 NCPU, MAX_NUM_PROCS = set_defaults_lam(tmpDir)
 
 try:
-    counterApplications.add_to_log('ADaCGH2', tmpDir, socket.gethostname())
+    counterApplications.add_to_log('ADaCGH-server', tmpDir, socket.gethostname())
 except:
     None
 
@@ -542,13 +578,16 @@ issue_echo('after check_room', tmpDir)
 
 if check_room == 'Failed':
     printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
+    writeStatusServer('ERROR!!!')
+    writeErrorMessage('MPI too busy. Too many jobs in the servers.' +
+                      '\nPlease try later', 'NULL')
     sys.exit()
 
 issue_echo('before lamboot', tmpDir)
 lamboot(lamSuffix, NCPU)
 issue_echo('after lamboot', tmpDir)
 
-counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH2', tmpDir,
+counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH-server', tmpDir,
                                           socket.gethostname())
 
 Rrun(tmpDir, lamSuffix)
@@ -558,40 +597,76 @@ time.sleep(TIME_BETWEEN_CHECKS + random.uniform(0.1, 3))
 
 count_mpi_crash = 0
 
+### FIXME: maybe we can get rid of the issue_echo calls
+
+
 while True:
-    if did_run_out_of_time(tmpDir, R_MAX_time):
-        issue_echo('run out of time', tmpDir)
-        cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
-        printRKilled()
+    if (status_run(tmpDir) == 'R_NormalTermination'):
+        issue_echo(status_run(tmpDir), tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('Normal termination')
+        ### FIXME: what about PaLS, etc? See old "printOKRun()"
         break
-    elif finished_ok(tmpDir):
-        issue_echo('finished OK', tmpDir)
-        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-        printOKRun()
+    elif (status_run(tmpDir) == 'R_User_Error'):
+        issue_echo(status_run(tmpDir), tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('User ERROR')
+        writeErrorMessage('', 'R_Error_msg.txt')
         break
-    elif halted(tmpDir):
-        issue_echo('halted', tmpDir)
-        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-        printErrorRun(tmpDir + '/Status.msg')
+    elif (status_run(tmpDir) == 'R_ExecutionHalted'):
+        issue_echo(status_run(tmpDir), tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('ERROR!!!')
+        writeErrorMessage('', 'R_Error_msg.txt')
         break
-    elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
-        issue_echo('R crash in slaves', tmpDir)
-        cleanups(tmpDir, newDir, 'natural.death.pid.txt', lamSuffix)
-        printErrorRun(did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1])
+    elif (status_run(tmpDir) == 'R_Other_Error'):
+        issue_echo(status_run(tmpDir), tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('ERROR!!!')
+        writeErrorMessage('', 'R_Error_msg.txt')
         break
+    elif (status_run(tmpDir) == 'R_Our_Error'):
+        issue_echo(status_run(tmpDir), tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('ERROR!!!')
+        writeErrorMessage('', 'R_Error_msg.txt')
+        break
+
     elif master_out_of_time(time_start):
         issue_echo('master out of time', tmpDir)
-        cleanups(tmpDir, newDir, 'killed.pid.txt', lamSuffix)
-        printRKilled()
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('ERROR!!!')
+        writeErrorMessage('Master out of time', 'NULL')
         break
+
+    elif did_run_out_of_time(tmpDir, R_MAX_time):
+        issue_echo('R run out of time', tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('ERROR!!!')
+        writeErrorMessage('R run out of time', 'NULL')
+        break
+    
+    elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
+        issue_echo('R crash in slaves', tmpDir)
+        cleanups(tmpDir, newDir, lamSuffix)
+        writeStatusServer('ERROR!!!')
+        writeErrorMessage('R crash in slaves\n ' +
+                          'See ' +
+                          did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1],
+                          'NULL')
+        break
+
     elif did_mpi_crash(tmpDir, machine_root = 'karl'):
         count_mpi_crash += 1
-        counterApplications.add_to_MPIErrorLog('ADaCGH2',
+        counterApplications.add_to_MPIErrorLog('ADaCGH-server',
                                                tmpDir, socket.gethostname(),
                                                message = 'MPI crash')
         if count_mpi_crash > MAX_MPI_CRASHES:
-            printMPIerror(tmpDir, MAX_MPI_CRASHES)
-            cleanups(tmpDir, newDir, 'MPIerror.pid.txt', lamSuffix)
+            logMPIerror(tmpDir, MAX_MPI_CRASHES)
+            issue_echo('count_mpi_crash > MAX_MPI_CRASHES', tmpDir)
+            cleanups(tmpDir, newDir, lamSuffix)
+            writeStatusServer('ERROR!!!')
+            writeErrorMessage('More MPI crashes than allowed', 'NULL')
             break
         else:
             recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS,
@@ -842,31 +917,6 @@ issue_echo('at the very end!', tmpDir)
     
 
 # ## Output-generating functions
-# def printErrorRun(errorfile):
-#     Rresults = open(tmpDir + "/results.txt")
-#     resultsFile = Rresults.read()
-#     errormsg = open(errorfile).read()
-#     outf = open(tmpDir + "/pre-results.html", mode = "w")
-#     outf.write("<html><head><title>ADaCGH results </title></head><body>\n")
-#     outf.write("<h1> ERROR: There was a problem with the R code </h1> \n")
-#     outf.write("<p>  This could be a bug on our code, or a problem  ")
-#     outf.write("with your data (that we hadn't tought of). Below is all the output from the execution ")
-#     outf.write("of the run. Unless it is obvious to you that this is a fault of your data ")
-#     outf.write("(and that there is no way we could have avoided the crash) ")
-#     outf.write("please let us know so we can fix the problem. ")
-#     outf.write("Please sed us this URL and the output below</p>")
-#     outf.write("<p> This is the results file:<p>")
-#     outf.write("<pre>")
-#     outf.write(cgi.escape(resultsFile))
-#     outf.write("</pre>")
-#     outf.write("<p> And this is the error message:<p>")
-#     outf.write("<pre>")
-#     outf.write(cgi.escape(errormsg))
-#     outf.write("</pre>")
-#     outf.write("</body></html>")
-#     outf.close()
-#     Rresults.close()
-#     shutil.copyfile(tmpDir + "/pre-results.html", tmpDir + "/results.html")
 
 
 # def printOKRun():
