@@ -121,11 +121,11 @@ caughtOurError.Web <- function(message) {
 }
 
 
-caughtUserError <- function(message) {
+caughtUserError.Web <- function(message) {
     mpi.clean.quit.Web()
     message <- paste("There was a problem with something you did.\n",
                      "Check the error message, your data and options and try again.\n",
-                     message)
+                     message, "\n")
     sink(file = "R_Error_msg.txt")
     cat(message)
     sink()
@@ -145,6 +145,8 @@ readOptions <- function(x) {
 }
 
 checkAssign <- function(value, rangeOK, lista) {
+    if(is.null(lista[[value]]))
+       caughtUserError.Web(paste(value, "has no value"))
     if(lista[[value]] %in% rangeOK)
         return(lista[[value]])
     else
@@ -152,7 +154,6 @@ checkAssign <- function(value, rangeOK, lista) {
 }
     
 
-checkMethodOptions
 acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
                      'entrez', 'ug', 'rsrna', 'rspeptide', 'hugo')
 acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
@@ -163,8 +164,6 @@ methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
                       'ACE'      = c('ACE.fdr'),
                       'CGHseg.s' = c('CGHseg.s')
                       )
-                      
-                      
 
 t.opt.assign <- function(nameopt, options) {
     ### Yes, we do assign into the global env.
@@ -177,7 +176,9 @@ t.opt.assign <- function(nameopt, options) {
 
 checkMethodOptions <- function(methodaCGH, method.options, options) {
     indexopts <- which(names(method.options) == methodaCGH)
-    sapply(method.options[[indexopts]], function(x) t.opt.assign(x, options))
+    if(length(indexopts) > 1)
+        sapply(method.options[[indexopts]],
+               function(x) t.opt.assign(x, options))
 }
 
 
@@ -197,23 +198,12 @@ checkMethodOptions <- function(methodaCGH, method.options, options) {
 version
 system("hostname")
 cat("\nRunning\n", file = "R_Status.txt")
-
+hostn <- system("hostname", intern = TRUE)
 pid <- Sys.getpid()
 startExecTime <- format(Sys.time())
 write.table(file = "pid.txt", pid,
             row.names = FALSE,
             col.names = FALSE)
-
-
-## attach pid to name in R.running.procs
-hostn <- system("hostname", intern = TRUE)
-new.name1 <- unlist(strsplit(getwd(), "\/"))
-new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
-new.name <- paste("R.", new.name1, "%", pid, sep = "")
-new.name1 <- paste("R.", new.name1, sep = "")
-system(paste("mv ../../R.running.procs/", new.name1,
-             " ../../R.running.procs/", new.name,
-             sep = ""))
 
 sink(file = "current_R_proc_info")
 cat(hostn)
@@ -221,6 +211,17 @@ cat("  ")
 cat(pid)
 cat("\n")
 sink()
+
+
+## attach pid to name in R.running.procs
+new.name1 <- unlist(strsplit(getwd(), "/"))
+new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
+new.name <- paste("R.", new.name1, "%", pid, sep = "")
+new.name1 <- paste("R.", new.name1, sep = "")
+system(paste("mv ../../R.running.procs/", new.name1,
+             " ../../R.running.procs/", new.name,
+             sep = ""))
+
 
 
 checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
@@ -295,7 +296,7 @@ if(checkpoint.num < 1) {
     load("inputData.RData")
 
     if( (methodaCGH == "ACE") & (length(unique(inputData$chromosome)) == 1))
-        caughtOurError(paste("There is a bug in the code that does not allow ACE",
+        caughtOurError.Web(paste("There is a bug in the code that does not allow ACE",
                              "to run with only one chromosome. We are working on it."))
 
     if(any(is.na(inputData))) {
@@ -303,11 +304,11 @@ if(checkpoint.num < 1) {
     }
     xcenter <- inputData[, -c(1, 2, 3)]
     
-    if(!(is.numeric(xdata))) {
+    if(any(!(apply(xcenter, 2, is.numeric))))  {
         caughtUserError.Web("Your aCGH file contains non-numeric data. \n That is not allowed.\n")
     }
     
-    cat("\n gc after reading xdata \n")
+    cat("\n gc after reading xcenter \n")
     gc()
 
 
@@ -333,13 +334,13 @@ if(checkpoint.num < 1) {
                          common.data$MidPoint,
                          common.data$ID)
         common.data <- common.data[reorder, ]
-        xdata <- xdata[reorder, , drop = FALSE]
+        xcenter <- xcenter[reorder, , drop = FALSE]
     }
 
-    arrayNames <- colnames(xdata)
-    tmp <- paste(commond.data$Chromosome, common.data$MidPoint, sep = ".")
+    arrayNames <- colnames(xcenter)
+    tmp <- paste(common.data$Chromosome, common.data$MidPoint, sep = ".")
     if (sum(duplicated(tmp)))
-        stopOurError("still duplicated MidPoints; shouldn't happen")
+        caughtOurError.Web("still duplicated MidPoints; shouldn't happen")
 
 
     
@@ -390,7 +391,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                        })
         
         if(inherits(trythis, "try-error"))
-            caughtOurError(trythis)
+            caughtOurError.Web(trythis)
         cat("\n\n Segmentation done \n\n")
         save(segmres, file = "segmres.RData")
         save(segmres[[1]], file = "adacgh-server-output.RData")
@@ -413,7 +414,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                    organism = organism,
                                    numarrays = numarrays))
         if(inherits(trythis, "try-error"))
-            caughtOurError(trythis)
+            caughtOurError.Web(trythis)
         cat("\n\n Plotting done \n\n")
         cat("\n gc right after plotting \n")
         print(gc())
@@ -421,7 +422,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                     acghdata = as.matrix(xcenter),
                                     commondata = common.data))
         if(inherits(trythis, "try-error"))
-            caughtOurError(trythis)
+            caughtOurError.Web(trythis)
         doCheckpoint(5)
         NormalTermination()
     }
@@ -453,7 +454,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
             cat("\n ************ done segmentation positive \n")
         })
         if(class(trythis) == "try-error")
-            caughtOurError(paste("Function pSegmentPSW (positive) bombed unexpectedly with error",
+            caughtOurError.Web(paste("Function pSegmentPSW (positive) bombed unexpectedly with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         writeResults(out.gains, commondata = common.data,
                      file = "Gains.Price.Smith.Waterman.results.txt")
@@ -476,7 +477,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
             cat("\n ************ done segmentation negative \n")
         })
         if(class(trythis) == "try-error")
-            caughtOurError(paste("Function pSegmentPSW (negative) bombed unexpectedly with error",
+            caughtOurError.Web(paste("Function pSegmentPSW (negative) bombed unexpectedly with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         writeResults(out.losses, commondata = common.data,
                      file = "Losses.Price.Smith.Waterman.results.txt")
@@ -514,7 +515,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                                   chrom.numeric = common.data$Chromosome)
                        )
         if(class(trythis) == "try-error")
-            caughtOurError(paste("Function pSegmentACE bombed unexpectedly with error",
+            caughtOurError.Web(paste("Function pSegmentACE bombed unexpectedly with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         ##save.image()
         doCheckpoint(2)
@@ -526,7 +527,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                        ACE.summ <- summary(ACE.object, fdr = ACE.fdr)
                        )
         if(class(trythis) == "try-error")
-            caughtOurError(paste("Function summary.ACE bombed unexpectedly with error",
+            caughtOurError.Web(paste("Function summary.ACE bombed unexpectedly with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         
         save(file = "ace.RData", list = ls())
@@ -544,7 +545,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                     file = NULL)
                        )
         if(class(trythis) == "try-error")
-            caughtOurError(paste("Function writeResults.summary.ACE.summary bombed unexpectedly with error",
+            caughtOurError.Web(paste("Function writeResults.summary.ACE.summary bombed unexpectedly with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         
         
@@ -560,7 +561,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                              Pos = common.data$MidPoint)
                        )
         if(class(trythis) == "try-error")
-            caughtOurError(trythis)
+            caughtOurError.Web(trythis)
 
         save.image()
         
@@ -574,7 +575,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                         idtype = idtype, organism = organism)
         })
         if(class(trythis) == "try-error")
-            caughtOurError(paste("Error in ACE plots  with error",
+            caughtOurError.Web(paste("Error in ACE plots  with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         save(file = "ace.RData", list = ls())
         doCheckpoint(3)

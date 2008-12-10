@@ -50,10 +50,6 @@ appProcs     = appDir + '/runs-tmp'
 runningProcs = appProcs + '/R.running.procs'
 tmpDD        = appProcs + '/tmp'
 
-os.system('echo "' + str(os.getpid()) + ' ' + socket.gethostname() +\
-           '"> ' + tmpDir + '/run_and_checkPID')
-
-
 def writeStatusServer(message, outfile = 'Status_Server_Run.msg'):
     ## we take tmpDir as a given! from local envir
     statusfile = open(tmpDir + '/' + outfile, mode = 'w')
@@ -83,7 +79,7 @@ def writeErrorMessage(message = '', infile = 'R_Error_msg.txt',
     
 def create_tmpDir(baseDir = tmpDD):
     """ Create a new directory with appropriate permissions"""
-    newDir = str(int(time.time())) + str(os.getpid()) + str(random.randint(1, 10000000))
+    newDir = str(random.randint(1, 10000000)) + str(int(time.time())) + str(os.getpid())
     tmpDir = baseDir + "/" + newDir
     os.mkdir(tmpDir)
     os.chmod(tmpDir, 0700)
@@ -453,13 +449,16 @@ def did_run_out_of_time(tmpDir, R_MAX_time):
         return False
                            
 
-def cleanups(tmpDir, newDir, newnamepid,
+def cleanups(tmpDir, newDir,
              lamSuffix,
              runningProcs= runningProcs,
              newnamepid = 'finished_pid.txt'):
     """ Clean up actions; kill lam, delete running.procs files, clean process table."""
     lamenv = open(tmpDir + "/lamSuffix", mode = "r").readline()
-    rinfo = open(tmpDir + '/current_R_proc_info', mode = 'r').readline().split()
+    try:
+        rinfo = open(tmpDir + '/current_R_proc_info', mode = 'r').readline().split()
+    except:
+        None
     try:
         kill_pid_machine(rinfo[1], rinfo[0])
     except:
@@ -560,6 +559,12 @@ def generate_lam_suffix(tmpDir):
     lamenvfile.close()
     return lamSuffix
 
+######################################################################
+######################################################################
+######################################################################
+
+
+
 
 
 ## Starting. First, the very first run.
@@ -568,8 +573,26 @@ def generate_lam_suffix(tmpDir):
 (newDir, tmpDir) = create_tmpDir()
 print tmpDir
 
+os.system('echo "' + str(os.getpid()) + ' ' + socket.gethostname() +\
+           '"> ' + tmpDir + '/run_and_checkPID')
+
+
 issue_echo('starting', tmpDir)
 writeStatusServer('Running')
+
+## put data from inputDir and f1.R and prepare other initial files
+shutil.copyfile(inputDir + '/inputData.RData',
+                tmpDir + '/inputData.RData')
+shutil.copyfile(inputDir + '/options.txt',
+                tmpDir + '/options.txt')
+shutil.copyfile(appDir + '/f1.R',
+                tmpDir + '/f1.R')
+os.system('/bin/touch ' + tmpDir + '/R_Error_msg.txt')
+touchRout = os.system("/bin/touch " + tmpDir + "/f1.Rout") 
+touchRrunning = os.system('/bin/touch ' +
+                          runningProcs + '/R.' + newDir +
+                          "@" + socket.gethostname())
+checkpoint = os.system("echo 0 > " + tmpDir + "/checkpoint.num")
 
        
 NCPU, MAX_NUM_PROCS = set_defaults_lam(tmpDir)
@@ -592,7 +615,7 @@ issue_echo('after check_room', tmpDir)
 
 if check_room == 'Failed':
     printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
-    writeStatusServer('ERROR!!!')
+    writeStatusServer('ERROR!!!\n')
     writeErrorMessage('MPI too busy. Too many jobs in the servers.' +
                       '\nPlease try later', 'NULL')
     sys.exit()
@@ -604,10 +627,7 @@ issue_echo('after lamboot', tmpDir)
 counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH-server', tmpDir,
                                           socket.gethostname())
 
-## put data from inputDir and start R
-shutil.copyfile(inputDir + '/inputData.RData',
-                tmpDir + '/inputData.RData')
-
+## start R
 Rrun(tmpDir, lamSuffix)
         
 time_start = time.time()
@@ -622,52 +642,52 @@ while True:
     if (status_run(tmpDir) == 'R_NormalTermination'):
         issue_echo(status_run(tmpDir), tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('Normal termination')
+        writeStatusServer('Normal termination\n')
         ### FIXME: what about PaLS, etc? See old "printOKRun()"
         break
     elif (status_run(tmpDir) == 'R_User_Error'):
         issue_echo(status_run(tmpDir), tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('User ERROR')
+        writeStatusServer('User ERROR\n')
         writeErrorMessage('', 'R_Error_msg.txt')
         break
     elif (status_run(tmpDir) == 'R_ExecutionHalted'):
         issue_echo(status_run(tmpDir), tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('ERROR!!!')
+        writeStatusServer('ERROR!!!\n')
         writeErrorMessage('', 'R_Error_msg.txt')
         break
     elif (status_run(tmpDir) == 'R_Other_Error'):
         issue_echo(status_run(tmpDir), tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('ERROR!!!')
+        writeStatusServer('ERROR!!!\n')
         writeErrorMessage('', 'R_Error_msg.txt')
         break
     elif (status_run(tmpDir) == 'R_Our_Error'):
         issue_echo(status_run(tmpDir), tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('ERROR!!!')
+        writeStatusServer('ERROR!!!\n')
         writeErrorMessage('', 'R_Error_msg.txt')
         break
 
     elif master_out_of_time(time_start):
         issue_echo('Master out of time', tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('ERROR!!!')
+        writeStatusServer('ERROR!!!\n')
         writeErrorMessage('Master out of time', 'NULL')
         break
 
     elif did_run_out_of_time(tmpDir, R_MAX_time):
         issue_echo('R run out of time', tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('ERROR!!!')
+        writeStatusServer('ERROR!!!\n')
         writeErrorMessage('R run out of time', 'NULL')
         break
     
     elif did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[0]:
         issue_echo('R crash in slaves', tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
-        writeStatusServer('ERROR!!!')
+        writeStatusServer('ERROR!!!\n')
         writeErrorMessage('R crash in slaves\n ' +
                           'See ' +
                           did_R_crash_in_slaves(tmpDir, machine_root = 'karl')[1],
@@ -683,7 +703,7 @@ while True:
             logMPIerror(tmpDir, MAX_MPI_CRASHES)
             issue_echo('count_mpi_crash > MAX_MPI_CRASHES', tmpDir)
             cleanups(tmpDir, newDir, lamSuffix)
-            writeStatusServer('ERROR!!!')
+            writeStatusServer('ERROR!!!\n')
             writeErrorMessage('More MPI crashes than allowed', 'NULL')
             break
         else:
