@@ -36,42 +36,42 @@
 ######                              ##########
 ##############################################
 ##############################################
+doCheckpoint <- function(num) {
+    checkpoint.num.new <- num
+    save.image()
+    checkpoint.num <<- num
+    sink("checkpoint.num")
+    cat(num)
+    sink()
+}
 
+mpi.clean.quit.Web <- function() {
+    if (is.loaded("mpi_initialize")){ 
+        if (mpi.comm.size(1) > 0){ 
+ ##            try(print("Please use mpi.close.Rslaves() to close slaves."), silent = TRUE)
+            try(mpi.close.Rslaves() , silent = TRUE)
+        } 
+ ##        try(print("Please use mpi.quit() to quit R"), silent = TRUE)
+        cat("\n\n Normal termination\n")
+##         try(mpi.quit(save = "yes"), silent = TRUE)
+    }
+    try(mpi.quit(save = "yes"), silent = TRUE)
+}
 
-.Last <- function(){
-    ## the next four lines are a way to ensure that the OS writes
-    ## a file that could be immediately read by Python to see
-    ## if we are done
+NormalTermination <- function(){
+    mpi.clean.quit.Web()
     status <- file("R_Status.txt", "w")
     cat("Normal termination\n", file = status)
     flush(status)
     close(status)
     ##save.image()
-    if (is.loaded("mpi_initialize")){ 
-        if (mpi.comm.size(1) > 0){ 
-        try(print("Please use mpi.close.Rslaves() to close slaves."), silent = TRUE)
-        try(mpi.close.Rslaves() , silent = TRUE)
-        } 
-        try(print("Please use mpi.quit() to quit R"), silent = TRUE)
-        cat("\n\n Normal termination\n")
-        try(mpi.quit(save = "yes"), silent = TRUE)
-    }
     cat("\n\n Normal termination\n")
     ## In case the CGI is not called (user kills browser)
     ## have a way to stop lam
 ##    try(system(paste("/http/mpi.log/killLAM.py", lamSESSION, "&")))
-    try(mpi.quit(save = "yes"), silent = TRUE)
+##     try(mpi.quit(save = "yes"), silent = TRUE)
+    quit(save = "yes", status = 0, runLast = FALSE)
 }
-
-doCheckpoint <- function(num) {
-  checkpoint.num.new <- num
-  save.image()
-    checkpoint.num <<- num
-  sink("checkpoint.num")
-    cat(num)
-    sink()
-}
-
 
 ## mpiSlaveMemClean <- function() {
 ##   cat("\n gc in slaves before delete \n")
@@ -82,7 +82,47 @@ doCheckpoint <- function(num) {
   
 ## }
 
+caughtOtherError.Web <- function(message) {
+    mpi.clean.quit.Web()
+    sink(file = "R_Error_msg.txt")
+    cat(message)
+    sink()
+    sink(file = "R_Status.txt")
+    cat("Other Error\n\n")
+    sink()
+    quit(save = "no", status = 11, runLast = FALSE)
+}
+
+caughtOtherPackageError.Web <- function(message) {
+    mpi.clean.quit.Web()
+    message <- paste("This is a known problem in a package we depend upon. ",
+                     message)
+    sink(file = "R_Error_msg.txt")
+    cat(message)
+    sink()
+    sink(file = "R_Status.txt")
+    cat("Other Error\n\n")
+    sink()
+    quit(save = "no", status = 11, runLast = FALSE)
+}
+
+caughtOurError.Web <- function(message) {
+    mpi.clean.quit.Web()
+    message <- paste("There was a problem with our code. Please let us know.\n", 
+                     message)
+    sink(file = "R_Error_msg.txt")
+    cat(message)
+    sink()
+    sink(file = "R_Status.txt")
+    cat("Our Error\n\n")
+    sink()
+    quit(save = "no", status = 11, runLast = FALSE)
+
+}
+
+
 caughtUserError <- function(message) {
+    mpi.clean.quit.Web()
     message <- paste("There was a problem with something you did.\n",
                      "Check the error message, your data and options and try again.\n",
                      message)
@@ -96,7 +136,6 @@ caughtUserError <- function(message) {
 }
 
 
-
 readOptions <- function(x) {
     ### return a list, because many more indexing options
     tmp <- read.table(x, sep = "\t", stringsAsFactors = FALSE)
@@ -104,7 +143,48 @@ readOptions <- function(x) {
     names(l1) <- tmp[, 1]
     return(l1)
 }
+
+checkAssign <- function(value, rangeOK, lista) {
+    if(lista[[value]] %in% rangeOK)
+        return(lista[[value]])
+    else
+        caughtUserError.Web(paste(value, "has a value we do not accept"))
+}
     
+
+checkMethodOptions
+acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
+                     'entrez', 'ug', 'rsrna', 'rspeptide', 'hugo')
+acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
+acceptedMethodaCGH <- c ('Wavelets', 'PSW', 'DNAcopy', 'ACE', 'GLAD', 'HMM', 'BioHMM',
+                      'CGHseg')
+methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
+                      'PSW'      = c('PSW.nIter', 'PSW.p.crit'),
+                      'ACE'      = c('ACE.fdr'),
+                      'CGHseg.s' = c('CGHseg.s')
+                      )
+                      
+                      
+
+t.opt.assign <- function(nameopt, options) {
+    ### Yes, we do assign into the global env.
+    if(!(nameopt %in% names(options)))
+        caughtUserError.Web(paste(nameopt, " not among the options."))
+    try1 <- try(assign(nameopt, as.numeric(options[[nameopt]]), envir = .GlobalEnv))
+    if(inherits(try1, "try-error"))
+        caughtUserError.Web(paste("User failure for option ", nameopt))
+}
+
+checkMethodOptions <- function(methodaCGH, method.options, options) {
+    indexopts <- which(names(method.options) == methodaCGH)
+    sapply(method.options[[indexopts]], function(x) t.opt.assign(x, options))
+}
+
+
+
+
+    
+
 
 ##############################################
 ##############################################
@@ -124,6 +204,11 @@ checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
 
 
 options <- readOptions("options.txt")
+idtype <- checkAssign("idtype", acceptedIDTypes, options)
+organism <- checkAssign("organism", acceptedOrganisms, options)
+methodaCGH <- checkAssign("method", acceptedMethodaCGH, options)
+checkMethodOptions(methodaCGH, methodOptions, options)    
+
 
 
 
@@ -328,11 +413,11 @@ trypositionInfo <-
                                    comment.char = "#",
                                    quote = ""))
 if(class(trypositionInfo) == "try-error")
-    caughtUserError(paste("The position file is not of the appropriate format\n",
+    caughtUserError.Web(paste("The position file is not of the appropriate format\n",
                     "In case it helps this is the error we get\n",
                     trypositionInfo, sep =""))
 if((ncol(positionInfo) < 4) & (twoFiles == "Two.files"))
-    caughtUserError(paste("The position information file has less than four columns\n",
+    caughtUserError.Web(paste("The position information file has less than four columns\n",
                     "This file MUST contain, in this order, the fields Name, Chromosome, Start, End. \n",
                           "Please see the help file."))
 
@@ -363,7 +448,7 @@ if(length(which(arrayNames == "")) > 1) {
                      "(We could try dealing with this automagically,\n",
                      "but there are some issues when guessing whether you really\n",
                      "had empty columns or legitimate columns with missing values)\n")
-    caughtUserError(message)
+    caughtUserError.Web(message)
 }
 if(length(arrayNames) > 0) {
     ##arrayNames <- arrayNames[-1]
@@ -372,7 +457,7 @@ if(length(arrayNames) > 0) {
         message <- paste("Array names are not unique.\n",
                          "Please change them so that they are unique.\n",
                          "The duplicated names are ", dupnames, "\n")
-        caughtUserError(message)
+        caughtUserError.Web(message)
     }
 }
 
@@ -381,18 +466,18 @@ tryxdata <-
         xdata <- scan("covarR", what = double(0), sep = "\t")
         )
 if(class(tryxdata) == "try-error")
-    caughtUserError(paste("The acgh data file is not of the appropriate format\n",
+    caughtUserError.Web(paste("The acgh data file is not of the appropriate format\n",
                           "In case it helps this is the error we get\n",
                           tryxdata, sep =""))
 
 xdata <- matrix(xdata, ncol = length(arrayNames), byrow = TRUE)
 
 if(ncol(xdata) < 1)
-    caughtUserError(paste("The acgh data file does not contain any data\n",
+    caughtUserError.Web(paste("The acgh data file does not contain any data\n",
                           "(recall that the first column is only identifiers)\n"))
 
 if(nrow(xdata) != nrow(positionInfo))
-    caughtUserError(paste("Different number of genes/clones in your\n",
+    caughtUserError.Web(paste("Different number of genes/clones in your\n",
                           "data and position (coordinate) files.\n",
                           nrow(xdata), "genes/clones in you data file\n",
                           nrow(positionInfo), "genes/clones in you positions file.\n"))
@@ -402,7 +487,7 @@ if(ncol(xdata) != length(arrayNames)) {
     emessage <- paste("We get that the number of columns in your data (", ncol(xdata), ")\n",
                       "is different from the number of column names (", length(arrayNames), ")\n",
                       "Check for things such as '#' or '#NULL!' in the middle of your data.\n")
-    caughtUserError(emessage)
+    caughtUserError.Web(emessage)
 }
 colnames(xdata) <- arrayNames
 
@@ -412,19 +497,19 @@ if(!length(arrayNames))
     cat(paste(colnames(xdata), collapse = "\t"), file = "arrayNames")
 
 if(!(is.numeric(as.matrix(xdata)))) {
-    caughtUserError("Your aCGH file contains non-numeric data. \n That is not allowed.\n")
+    caughtUserError.Web("Your aCGH file contains non-numeric data. \n That is not allowed.\n")
 }
 if(any(is.na(xdata))) {
-    caughtUserError("Your aCGH file contains missing values. \n That is not allowed.\n")
+    caughtUserError.Web("Your aCGH file contains missing values. \n That is not allowed.\n")
 }
 if(any(is.na(positionInfo))) {
-    caughtUserError(paste("The position (coordinate) information contains missing values.\n",
+    caughtUserError.Web(paste("The position (coordinate) information contains missing values.\n",
                           "That is not allowed.\n",
                           "If you entered a single file, this means that there are missings\n",
                           "in some of the first four columns.\n"))
 }
 if(any(!is.numeric(as.matrix(positionInfo[, c(3, 4)])))) {
-    caughtUserError(paste("Your position information (or the first four columns\n",
+    caughtUserError.Web(paste("Your position information (or the first four columns\n",
                           "of your single file) contains non-numeric values \n",
                           "for the start and/or end positions."))
 }
@@ -449,7 +534,7 @@ if(length(weird.chromos)) {
                 "1 to 100 or X or Y; these have been excluded ",
                 "from further analyses."))
     if (length(weird.chromos) > (dim(positionInfo)[1]/2)) {
-        caughtUserError("More than half of your data have chromosomes with values that are neither an integer 1:100 or X, Y")
+        caughtUserError.Web("More than half of your data have chromosomes with values that are neither an integer 1:100 or X, Y")
     }
     positionInfo <- positionInfo[-weird.chromos, ]
     xdata <- xdata[-weird.chromos, , drop = FALSE]
@@ -673,6 +758,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         if(inherits(trythis, "try-error"))
             caughtOurError(trythis)
         doCheckpoint(5)
+        NormalTermination()
     }
 } else if(methodaCGH == "PSW") {
 #######################################################
@@ -756,7 +842,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                     cghdata = xcenter,
                     idtype = idtype, organism = organism)
         doCheckpoint(5)
-        quit(save = "yes", status = 0, runLast = TRUE)
+        NormalTermination()
     }
     
 } else if(methodaCGH == "ACE") {
@@ -846,6 +932,6 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                  trythis, ". \n Please let us know so we can fix the code."))
         save(file = "ace.RData", list = ls())
         doCheckpoint(3)
-        quit(save = "yes", status = 0, runLast = TRUE)
+        NormalTermination()
     }
 }
