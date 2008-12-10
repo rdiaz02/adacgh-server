@@ -11,6 +11,15 @@
 ##         values inside the code itself
 
 
+
+
+### For R: inputData.RData
+### We return to caller a directory name
+### Files:
+##        Status_Server_Run.msg
+##        Error_msg.txt
+
+
 import sys
 import os
 import cgi 
@@ -594,6 +603,10 @@ issue_echo('after lamboot', tmpDir)
 
 counterApplications.add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH-server', tmpDir,
                                           socket.gethostname())
+
+## put data from inputDir and start R
+shutil.copyfile(inputDir + '/inputData.RData',
+                tmpDir + '/inputData.RData')
 
 Rrun(tmpDir, lamSuffix)
         
