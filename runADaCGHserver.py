@@ -608,7 +608,7 @@ lamSuffix = generate_lam_suffix(tmpDir)
 
 issue_echo('at 3', tmpDir)
 
-time.sleep(random.uniform(0.1, 15)) ## Break ties if starting at identical times
+time.sleep(random.uniform(0.1, 3)) ## Break ties if starting at identical times
 
 check_room = my_queue(MAX_NUM_PROCS)
 issue_echo('after check_room', tmpDir)

@@ -82,6 +82,7 @@ caughtOtherError.Web <- function(message) {
     mpi.clean.quit.Web()
     sink(file = "R_Error_msg.txt")
     cat(message)
+    cat("\n")
     sink()
     sink(file = "R_Status.txt")
     cat("Other Error\n\n")
@@ -95,6 +96,7 @@ caughtOtherPackageError.Web <- function(message) {
                      message)
     sink(file = "R_Error_msg.txt")
     cat(message)
+    cat("\n")
     sink()
     sink(file = "R_Status.txt")
     cat("Other Error\n\n")
@@ -108,6 +110,7 @@ caughtOurError.Web <- function(message) {
                      message)
     sink(file = "R_Error_msg.txt")
     cat(message)
+    cat("\n")
     sink()
     sink(file = "R_Status.txt")
     cat("Our Error\n\n")
@@ -124,6 +127,7 @@ caughtUserError.Web <- function(message) {
                      message, "\n")
     sink(file = "R_Error_msg.txt")
     cat(message)
+    cat("\n")
     sink()
     sink(file = "R_Status.txt")
     cat("User Error\n\n")
@@ -223,9 +227,11 @@ system(paste("mv ../../R.running.procs/", new.name1,
 checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
 
 ## defaults for DNA copy and other defaults or options that will get overwritten
+## if needed
 DNA.undo.splits = "prune" ## don't touch this
 DNA.undo.sd = 3  ## not needed, really
 Wave.minDiff <- CGHseg.s <- NA
+mergeRes <- 1
 
 options <- readOptions("options.txt")
 idtype <- checkAssign("idtype", acceptedIDTypes, options)
@@ -389,7 +395,9 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
             caughtOurError.Web(trythis)
         cat("\n\n Segmentation done \n\n")
         save(segmres, file = "segmres.RData")
-        save(segmres[[1]], file = "adacgh-server-output.RData")
+        adacgh.server.output <- segmres[[1]]
+        save(adacgh.server.output, file = "adacgh.server.output.RData")
+        rm(adacgh.server.output)
         doCheckpoint(3)
         cat("\n gc right after checkpoint 3 \n")
         print(gc())
