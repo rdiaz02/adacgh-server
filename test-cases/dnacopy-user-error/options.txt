@@ -1,0 +1,3 @@
+method	DNAcopy
+idtype	None
+organism	None

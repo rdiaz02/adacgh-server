@@ -48,14 +48,10 @@ doCheckpoint <- function(num) {
 mpi.clean.quit.Web <- function() {
     if (is.loaded("mpi_initialize")){ 
         if (mpi.comm.size(1) > 0){ 
- ##            try(print("Please use mpi.close.Rslaves() to close slaves."), silent = TRUE)
             try(mpi.close.Rslaves() , silent = TRUE)
         } 
- ##        try(print("Please use mpi.quit() to quit R"), silent = TRUE)
-        cat("\n\n Normal termination\n")
-##         try(mpi.quit(save = "yes"), silent = TRUE)
     }
-    try(mpi.quit(save = "yes"), silent = TRUE)
+    try(mpi.exit(), silent = TRUE)
 }
 
 NormalTermination <- function(){
@@ -242,9 +238,8 @@ assign(".__ADaCGH_SERVER_APPL", TRUE)
 
 ########################################################
 
-########   Start MPI here to check if everything OK
+########################################################
 
-#########################################################
 library(Hmisc, verbose = FALSE)
 library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
 ## but we must mask certain defs. in waveslim. So load
@@ -379,7 +374,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         
         ymax <- max(as.matrix(xcenter))
         ymin <- min(as.matrix(xcenter))
-        numarrays <- ncol(xcenter)
+##        numarrays <- ncol(xcenter)
         trythis <- try({Wave.minDiff
                         fseg <- get(paste("pSegment", methodaCGH, sep = ""))
                         segmres <- fseg(as.matrix(xcenter),
