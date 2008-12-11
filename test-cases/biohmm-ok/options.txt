@@ -1,0 +1,3 @@
+method	BioHMM
+idtype	None
+organism	None

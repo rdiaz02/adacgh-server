@@ -1,0 +1,3 @@
+method	GLAD
+idtype	None
+organism	None

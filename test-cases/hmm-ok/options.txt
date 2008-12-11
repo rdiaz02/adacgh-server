@@ -1,0 +1,3 @@
+method	HMM
+idtype	None
+organism	None

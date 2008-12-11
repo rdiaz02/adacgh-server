@@ -1,0 +1,5 @@
+method	CGHseg
+idtype	ug
+organism	Hs
+CGHseg.s	-0.15
+

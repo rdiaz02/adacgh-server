@@ -162,7 +162,7 @@ acceptedMethodaCGH <- c ('Wavelets', 'PSW', 'DNAcopy', 'ACE', 'GLAD', 'HMM', 'Bi
 methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
                       'PSW'      = c('PSW.nIter', 'PSW.p.crit'),
                       'ACE'      = c('ACE.fdr'),
-                      'CGHseg.s' = c('CGHseg.s')
+                      'CGHseg'   = c('CGHseg.s')
                       )
 
 t.opt.assign <- function(nameopt, options) {
