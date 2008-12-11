@@ -1,0 +1,263 @@
+Hola a todos,
+
+Podemos empezar a probar. La parte de Python que controla MPI y R, y la
+parte de R parece que están más o menos OK.
+
+1. Para llamar al programa hacer (como usuario www-data; lo cambiamos si
+es necesario)
+
+/http/adacgh-server/runADaCGHserver.py   PATH-DONDE-COGE-EL-INPUT
+
+
+Con eso, el programa devuelve un path a un directorio temporal.
+
+Además, y durante la ejecución, puede emitir mensajes, y blablabla. Esos
+se pueden ignorar (redirigir a /dev/null ?)
+
+Ah, conveniente correr el programa en background, claro.
+
+
+Hay varios ejemplos más abajo.
+
+
+
+###########                INPUT      ####################
+
+
+(Ojo con mayusculas y minúsculas: para hjacer el error checking más fino,
+soy muy pijotero con eso. Por ejemplo, si en vez de "chromosome" usamos
+"Chromosome", cascará).
+
+
+
+2. Input: en el directorio PATH-DONDE-COGE-EL-INPUT tiene que haber dos ficheros:
+
+2.1. inputData.RData
+
+     Son los datos de input, como RData. Este fichero tiene, en este
+     orden (y con esos nombres), las columnas:
+
+          ID
+     	  chromosome
+	  position
+
+	  y luego todas las arrays.
+
+
+
+2.2. options.txt
+
+     Fichero de opciones. Va el nombre de opcion y la opción, separado por
+     tabuladores. Hay tres opciones que siempre tienen que figurar
+     
+     method, idtype, organism.
+
+     method es el método, claro. idtype y organism es para acceder al
+     IDconverter, etc. 
+
+     Los valores de method pueden ser:
+     'Wavelets', 'PSW', 'DNAcopy', 'ACE', 'GLAD', 'HMM', 'BioHMM',
+                      'CGHseg'
+
+     (ojo: de momento, no usaremos ni PSW ni ACE). Esos métodos
+     corresponden a, respectivamente,
+     Wavelets (Hsu et al.), SW-ARRAY, DNAcopy o CBS, ACE (Lingjaerde),
+     GLAD (Hupé et al.), HMM (Fridlyand et al.), BioHMM (Marioni et al.),
+     CGHseg (Picard et al.).
+
+
+     Los valores de idtype pueden ser:
+     'None', 'cnio', 'affy', 'clone', 'acc', 'ensembl', 'entrez', 
+     'ug', 'rsrna', 'rspeptide', 'hugo'
+
+     estos corresponden a:
+     No sabe-no-contesta, CNIO ID, Affymetrix ID,  Clone ID (IMAGE
+     Consortium), GenBank Accession, Ensembl Gene, Entrez Gene, Unigene
+     Cluster, RefSeq RNA, RefSeq peptide, HUGO Gene Name
+
+
+
+
+     Los valores de organism pueden ser:
+     'None', 'Hs', 'Mm', 'Rn'  (corresponden a: No se sabe o se pasa, H. sapiens,
+     ratoncito, rata)
+
+
+
+     Hay otras opciones obligatorias para algunos métodos (estas opciones
+     son todas valores numéricos):
+
+                      'Wavelets' = c('Wave.minDiff', 'mergeRes'),
+                      'CGHseg'   = c('CGHseg.s')
+                      'PSW'      = c('PSW.nIter', 'PSW.p.crit'),
+                      'ACE'      = c('ACE.fdr'),
+     
+     Wave.minDiff: defaul de 0.25. Tiene que ser positivo.
+
+     mergeRes: 0 o 1 (si hacer o no merging con mergeSegs). Default es 1
+     (sí).
+
+     CGHseg.s: default es -0.5. Tienen que ser negativos.
+
+     De los otros ya nos ocuparemos, si procede.
+
+
+
+##################     OUTPUT            ###################3
+
+
+3. El estado del programa se va guardando en un fichero (en el directorio
+temporal devuelto). Este fichero se llama
+
+	 Status_Server_Run.msg
+
+
+3.1. Este fichero SOLO puede contener uno de los siguientes mensajes:
+     Running
+     Normal termination
+     ERROR!!!
+     User ERROR
+
+
+3.2. Si hay errores (condiciones tercera y cuarta de antes) se crea un
+fichero de texto con una traza para el usuario (y nosotros). Eso se deja
+en el fichero:
+
+   Error_msg.txt
+
+
+
+3.3 Entonces, lo que la aplicación que llama tiene que hacer es:
+
+    3.3.1 Verificar periódicamente lo que hay en "Status_Server_Run.msg".
+
+    3.3.2. Si está "Running", esperar.
+
+    3.3.3. Si dice "Normal termination" pues ejecutar acciones que vienen
+    despues
+
+    3.3.4. Si dice "ERROR!!!", devolver en el navegador el mensaje dentro
+    de "Error_msg.txt" y, a ser posible, enviarnos a nosotros un error.
+    
+    3.3.5. Si dice "User ERROR", devolver en el navegador el mensaje
+    dentro de "Error_msg.txt". OJO: dado que el error checking se supone
+    que se hace en la aplicación de antes, estos mensajes rara vez
+    deberían darse. Así que, ahora, serán sobre todo errores entre
+    nosotros (como pasa Angel las cosas, si yo las leo mal, si la "API"
+    esta es una mierda, etc).
+
+
+
+3.4. Si la terminación es correcta, en el directorio temporal habrá un
+fichero que se llama 
+
+	adacgh.server.output.RData
+
+Esto es una lista de R. Cada elemento de la lista corresponde a uno de los
+arrays de entrada. Y esta es la estructura (esto es la ayuda que puse en
+el adacgh, el paquete de R) de cada componente de esta lista:
+
+     A matrix with three
+     columns. The first are the observed data, the second the
+     predicted/smoothed/merged data, and the third the
+     state/alteration. When the method performs a merging step, we call
+     the third column "Alteration", and it can only take three values,
+     -1 (loss of genomic DNA), 0, +1 (gain of genomic DNA).
+
+
+
+
+3.5. Figuras: se crean montones de figuras. Estas, además, pueden usar
+Javascript, para permitir identificación dinámica de puntos.  Entonces,
+habrá tanto 
+     
+     Ficheros png
+
+     Ficheros html
+
+     Sugiero usar el html directamente, porque incorpora ya el Javascript,
+     etc.
+
+
+
+3.6. Nombres de figuras. 
+
+     3.6.1 Nombre array + .html: una figura para cada array. Si se clicka
+     en la parte de un cromosoma, se abre la de tipo 3.6.2
+
+
+     3.6.2. Chr + NUMERO_CROMOSOMA + @ + NOMBRE_ARRAY + .html: La figura
+       para ese cromosoma para ese array
+
+       3.6.3. Chr + NUMERO_CROMOSOMA + @ + All_arrays.html: superposicion
+       de todas las arrays para ese cromosoma.
+
+       3.6.4. All_arrays.html: superposición de todas las arrays.
+     
+
+
+3.7 Links en figuras: al clickar en las sondas se abre una ventanita con
+el ID de la sonda; se puede dejar abierta, o cerrar.
+
+   3.7.1 Si hemos metido valores de idtype y organismo que son válidos,
+   hay un link al IDClight, con info adicional sobre esa sonda.
+
+
+
+Como ejemplo: corred (ver abajo) el ejemplo dnacopy-ok, y cuando termine
+abrid el fichero 
+
+      L.1.html
+
+      clickad en un cromosoma
+
+      clicakd en una sonda
+
+      clickad en ID de esa sonda
+
+
+
+
+
+
+###########    EJEMPLOS    ################
+
+
+En 
+/http/adacgh-server/test-cases
+
+
+hay varios ejemplos. Incluyen errores de usuario, errores en código R (un
+ejemplo fictio con ACE), y casos de terminación normal.
+
+Esos directorios lo único que tienen es el inputData.RData y el options.txt. 
+
+
+
+
+Podeis lanzarlos así (si lanzais más de 2 o 3 a la vez algunos se
+pondrán en la cola mía especial para MPI, y no harían nada durante un
+ratín):
+
+
+
+
+
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/dnacopy-ok/  &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/dnacopy-user-error/ &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/ace-our-error/ &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/biohmm-ok/ &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/cghseg-ok/ &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/glad-ok/ &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/hmm-ok &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/wavelets-options-error/ &
+/http/adacgh-server/runADaCGHserver.py /http/adacgh-server/test-cases/wavelets-ok/ &
+
+
+
+
+
+
+
+
+

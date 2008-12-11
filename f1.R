@@ -176,7 +176,7 @@ t.opt.assign <- function(nameopt, options) {
 
 checkMethodOptions <- function(methodaCGH, method.options, options) {
     indexopts <- which(names(method.options) == methodaCGH)
-    if(length(indexopts) > 1)
+    if(length(indexopts) > 0)
         sapply(method.options[[indexopts]],
                function(x) t.opt.assign(x, options))
 }
