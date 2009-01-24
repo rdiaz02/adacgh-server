@@ -164,13 +164,13 @@ def set_defaults_lam(tmpDir):
 #         datsize2 = int(os.popen('ls ' + tmpDir + '/acghAndPosition -sk').read().split()[0])
     datsize = int(os.popen('ls ' + tmpDir + '/inputData.RData -sk').read().split()[0])
     if datsize < 2000:
-        return (2, 3)
+        return (2, 4)
     elif datsize < 6000:
-        return (2, 2)
+        return (2, 3)
     elif datsize < 14000:
-        return (2, 1)
+        return (1, 3)
     else:
-        return (1, 1) 
+        return (1, 2) 
 
 
 def issue_echo(fecho, tmpDir):
@@ -637,7 +637,13 @@ def generate_lam_suffix(tmpDir):
 ## Starting. First, the very first run.
 
 
-(newDir, tmpDir) = create_tmpDir()
+##(newDir, tmpDir) = create_tmpDir()
+
+tmpDir = inputDir
+tmp1 = tmpDir.split('/')
+newDir = tmp1[len(tmp1) - 1]
+
+
 print tmpDir
 
 os.system('echo "' + str(os.getpid()) + ' ' + socket.gethostname() +\
@@ -648,10 +654,11 @@ issue_echo('starting', tmpDir)
 writeStatusServer('Running')
 
 ## put data from inputDir and f1.R and prepare other initial files
-shutil.copyfile(inputDir + '/inputData.RData',
-                tmpDir + '/inputData.RData')
-shutil.copyfile(inputDir + '/options.txt',
-                tmpDir + '/options.txt')
+# shutil.copyfile(inputDir + '/inputData.RData',
+#                 tmpDir + '/inputData.RData')
+# shutil.copyfile(inputDir + '/options.txt',
+#                 tmpDir + '/options.txt')
+
 shutil.copyfile(appDir + '/f1.R',
                 tmpDir + '/f1.R')
 os.system('/bin/touch ' + tmpDir + '/R_Error_msg.txt')

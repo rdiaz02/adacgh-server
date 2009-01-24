@@ -233,7 +233,11 @@ DNA.undo.sd = 3  ## not needed, really
 Wave.minDiff <- CGHseg.s <- NA
 mergeRes <- 1
 
-options <- readOptions("options.txt")
+trythis <- try({options <- readOptions("options.txt")})
+if(inherits(trythis, "try-error"))
+  caughtUserError.Web(trythis)
+
+
 idtype <- checkAssign("idtype", acceptedIDTypes, options)
 organism <- checkAssign("organism", acceptedOrganisms, options)
 methodaCGH <- checkAssign("method", acceptedMethodaCGH, options)
