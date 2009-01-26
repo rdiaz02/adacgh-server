@@ -183,7 +183,45 @@ checkMethodOptions <- function(methodaCGH, method.options, options) {
 
 
 
+custom.out1 <- function(custom.common = custom.common,
+                        segmres = segmres,
+                        arrayNames = arrayNames) {
+  
+  partC <- partB <- partA <- matrix(-9999,
+                                    nrow = nrow(custom.common),
+                                    ncol = length(arrayNames))
 
+##   for (i in 1:length(arrayNames)) {
+##     partA[, i] <- segmres[[i]][, 1]
+##     partB[, i] <- segmres[[i]][, 2]
+##     partC[, i] <- segmres[[i]][, 3]
+##   }
+  partA <- sapply(segmres[[1]], function(x) x[, 1])
+  partB <- sapply(segmres[[1]], function(x) x[, 2])
+  partC <- sapply(segmres[[1]], function(x) x[, 3])
+  
+  colnames(partA) <- colnames(partB) <- colnames(partC) <-arrayNames
+  observed.out <- cbind(custom.common, partA)
+  rm(partA)
+  for(i in 1:3) gc()
+  segmented.out <- cbind(custom.common, partB)
+  for(i in 1:3) rm(partB)
+  calls.out <- cbind(custom.common, partC)
+  for(i in 1:3) rm(partC)
+  
+  save(file = "observed.out.RData", observed.out)
+  save(file = "segmented.out.RData", segmented.out)
+  save(file = "calls.out.RData", calls.out)
+  
+  write.table(file = "segmented.out.txt",
+              segmented.out, sep = "\t",
+              quote = FALSE, row.names = FALSE,
+              col.names = TRUE)
+  write.table(file = "calls.out.txt",
+              calls.out, sep = "\t",
+              quote = FALSE, row.names = FALSE,
+              col.names = TRUE)
+}
     
 
 
@@ -401,6 +439,13 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         save(segmres, file = "segmres.RData")
         adacgh.server.output <- segmres[[1]]
         save(adacgh.server.output, file = "adacgh.server.output.RData")
+
+        custom.common <- data.frame(ProbeName = common.data$ID,
+                                    Chr = common.data$Chromosome,
+                                    Position = common.data$MidPoint)
+
+        custom.out1(custom.common, segmres, arrayNames)
+        
         rm(adacgh.server.output)
         doCheckpoint(3)
         cat("\n gc right after checkpoint 3 \n")
@@ -425,11 +470,13 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         cat("\n\n Plotting done \n\n")
         cat("\n gc right after plotting \n")
         print(gc())
-        trythis <- try(writeResults(segmres,
-                                    acghdata = as.matrix(xcenter),
-                                    commondata = common.data))
-        if(inherits(trythis, "try-error"))
-            caughtOurError.Web(trythis)
+        ## for wavi, we don't need this
+##         trythis <- try(writeResults(segmres,
+##                                     acghdata = as.matrix(xcenter),
+##                                     commondata = common.data))
+##         if(inherits(trythis, "try-error"))
+##             caughtOurError.Web(trythis)
+
         doCheckpoint(5)
         NormalTermination()
     }
