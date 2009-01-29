@@ -516,17 +516,13 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         cat("\n gc right after plotting \n")
         print(gc())
 
+        ### hey, we do not need this for wavi!!
 
-        
-
-
-
-
-        trythis <- try(writeResults(segmres,
-                                    acghdata = as.matrix(xcenter),
-                                    commondata = common.data))
-        if(inherits(trythis, "try-error"))
-            caughtOurError.Web(trythis)
+##         trythis <- try(writeResults(segmres,
+##                                     acghdata = as.matrix(xcenter),
+##                                     commondata = common.data))
+##         if(inherits(trythis, "try-error"))
+##             caughtOurError.Web(trythis)
         doCheckpoint(5)
         NormalTermination()
     }
