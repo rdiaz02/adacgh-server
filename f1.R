@@ -301,6 +301,14 @@ library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
 ## but we must mask certain defs. in waveslim. So load
 ## waveslim here
 library(ADaCGH, verbose = FALSE)
+
+cat("\nADaCGH Version :")
+packageDescription("ADaCGH")$Version
+
+cat("\n\n")
+
+
+
 library(Rmpi)
 
 trylam <- try(
@@ -475,7 +483,8 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                    numarrays = numarrays,
                                    colors = colorsWavi,
                                    html_js = FALSE,
-                                   superimp = FALSE))
+                                   superimp = FALSE,
+                                   imgheight = 350))
         if(inherits(trythis, "try-error"))
             caughtOurError.Web(trythis)
         cat("\n\n Plotting done \n\n")
@@ -506,7 +515,8 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                    numarrays = numarrays,
                                    colors = c(rep("black", 3), "blue"),
                                    html_js = FALSE,
-                                   superimp = FALSE))
+                                   superimp = FALSE,
+                                   imgheight = 350))
         if(inherits(trythis, "try-error"))
             caughtOurError.Web(trythis)
         system('mmv "*" "BW_#1"')

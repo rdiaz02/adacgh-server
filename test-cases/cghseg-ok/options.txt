@@ -2,8 +2,8 @@ method	CGHseg
 idtype	ug
 organism	Hs
 CGHseg.s	-0.15
-colorNoChange   black
-colorGain       green
-colorLoss       pink
-colorSmooth     red
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
 

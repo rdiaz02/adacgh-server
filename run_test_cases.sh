@@ -1,10 +1,10 @@
 #!/bin/bash
-rm ./runs-tmp/tmp/dnacopy-ok
-rm ./runs-tmp/tmp/cghseg-ok
-rm ./runs-tmp/tmp/hmm-ok
-rm ./runs-tmp/tmp/biohmm-ok
-rm ./runs-tmp/tmp/wavelets-ok
-rm ./runs-tmp/tmp/glad-ok
+rm -f -r ./runs-tmp/tmp/dnacopy-ok
+rm -f -r ./runs-tmp/tmp/cghseg-ok
+rm -f -r ./runs-tmp/tmp/hmm-ok
+rm -f -r ./runs-tmp/tmp/biohmm-ok
+rm -f -r ./runs-tmp/tmp/wavelets-ok
+rm -f -r ./runs-tmp/tmp/glad-ok
 
 cp -a ./test-cases/dnacopy-ok ./runs-tmp/tmp/.
 cp -a ./test-cases/biohmm-ok ./runs-tmp/tmp/.

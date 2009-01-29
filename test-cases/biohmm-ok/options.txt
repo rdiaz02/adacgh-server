@@ -1,7 +1,7 @@
 method	BioHMM
 idtype	None
 organism	None
-colorNoChange   black
-colorGain       green
-colorLoss       pink
-colorSmooth     red
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
