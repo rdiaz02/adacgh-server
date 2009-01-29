@@ -285,7 +285,7 @@ colorNoChange <- checkAssign("colorNoChange", acceptedColors, options)
 colorGain <- checkAssign("colorGain", acceptedColors, options)
 colorLoss <- checkAssign("colorLoss", acceptedColors, options)
 colorSmooth <- checkAssign("colorSmooth", acceptedColors, options)
-colorsWavi <- c(colorNoChange, colorGain, colorLoss, colorSmooth)
+colorsWavi <- c(colorNoChange, colorGain, colorLoss, colorSmooth, "black")
 
 checkMethodOptions(methodaCGH, methodOptions, options)    
 
@@ -489,11 +489,12 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
 ##             caughtOurError.Web(trythis)
 
         ## Plots without colours
-        ## And waht about file names?? The plots will be overwritten
-        ## Create a new dir, generate output, mmv everything to "CGHcall.#1"
-        ## and move to upper dir
+        ## As plots would get overwritten I create a new dir, etc.
         dir1 <- getwd()
-        dir.create("CGHcall")
+        dir.create("BW")
+        setwd("BW")
+        print(getwd())
+        mpi.remote.exec(setwd("BW"))
         trythis <- try(
                        segmentPlot(segmres, geneNames = common.data$ID,
                                    chrom.numeric = common.data$Chromosome,
@@ -508,9 +509,10 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                    superimp = FALSE))
         if(inherits(trythis, "try-error"))
             caughtOurError.Web(trythis)
-        system('mmv "*" "CGHcall.#1"')
+        system('mmv "*" "BW_#1"')
         system('cp * ../.')
         setwd(dir1)
+        mpi.remote.exec(setwd(dir1))
         
         cat("\n\n Plotting done \n\n")
         cat("\n gc right after plotting \n")
