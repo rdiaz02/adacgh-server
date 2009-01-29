@@ -164,6 +164,8 @@ methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
                       'ACE'      = c('ACE.fdr'),
                       'CGHseg'   = c('CGHseg.s')
                       )
+acceptedColors <- colors()
+
 
 t.opt.assign <- function(nameopt, options) {
     ### Yes, we do assign into the global env.
@@ -279,6 +281,12 @@ if(inherits(trythis, "try-error"))
 idtype <- checkAssign("idtype", acceptedIDTypes, options)
 organism <- checkAssign("organism", acceptedOrganisms, options)
 methodaCGH <- checkAssign("method", acceptedMethodaCGH, options)
+colorNoChange <- checkAssign("colorNoChange", acceptedColors, options)
+colorGain <- checkAssign("colorGain", acceptedColors, options)
+colorLoss <- checkAssign("colorLoss", acceptedColors, options)
+colorSmooth <- checkAssign("colorSmooth", acceptedColors, options)
+colorsWavi <- c(colorNoChange, colorGain, colorLoss, colorSmooth)
+
 checkMethodOptions(methodaCGH, methodOptions, options)    
 
 assign(".__ADaCGH_SERVER_APPL", TRUE)
@@ -464,7 +472,10 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                    yminmax = c(ymin, ymax),
                                    idtype = idtype,
                                    organism = organism,
-                                   numarrays = numarrays))
+                                   numarrays = numarrays,
+                                   colors = colorsWavi,
+                                   html_js = FALSE,
+                                   superimp = FALSE))
         if(inherits(trythis, "try-error"))
             caughtOurError.Web(trythis)
         cat("\n\n Plotting done \n\n")
@@ -477,6 +488,45 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
 ##         if(inherits(trythis, "try-error"))
 ##             caughtOurError.Web(trythis)
 
+        ## Plots without colours
+        ## And waht about file names?? The plots will be overwritten
+        ## Create a new dir, generate output, mmv everything to "CGHcall.#1"
+        ## and move to upper dir
+        dir1 <- getwd()
+        dir.create("CGHcall")
+        trythis <- try(
+                       segmentPlot(segmres, geneNames = common.data$ID,
+                                   chrom.numeric = common.data$Chromosome,
+                                   cghdata = NULL,
+                                   arraynames = arrayNames,
+                                   yminmax = c(ymin, ymax),
+                                   idtype = idtype,
+                                   organism = organism,
+                                   numarrays = numarrays,
+                                   colors = c(rep("black", 3), "blue"),
+                                   html_js = FALSE,
+                                   superimp = FALSE))
+        if(inherits(trythis, "try-error"))
+            caughtOurError.Web(trythis)
+        system('mmv "*" "CGHcall.#1"')
+        system('cp * ../.')
+        setwd(dir1)
+        
+        cat("\n\n Plotting done \n\n")
+        cat("\n gc right after plotting \n")
+        print(gc())
+
+
+        
+
+
+
+
+        trythis <- try(writeResults(segmres,
+                                    acghdata = as.matrix(xcenter),
+                                    commondata = common.data))
+        if(inherits(trythis, "try-error"))
+            caughtOurError.Web(trythis)
         doCheckpoint(5)
         NormalTermination()
     }

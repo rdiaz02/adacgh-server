@@ -1,3 +1,7 @@
 method	DNAcopy
 idtype	ug
 organism	Hs
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
