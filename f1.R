@@ -25,7 +25,6 @@
 ######################################################################
 ######################################################################
 
-
 ##############################################
 ##############################################
 ######                              ##########
@@ -223,6 +222,8 @@ custom.out1 <- function(custom.common = custom.common,
               calls.out, sep = "\t",
               quote = FALSE, row.names = FALSE,
               col.names = TRUE)
+
+ system("chmod 777 calls.out.txt")
 }
     
 
@@ -240,6 +241,9 @@ system("hostname")
 cat("\nRunning\n", file = "R_Status.txt")
 hostn <- system("hostname", intern = TRUE)
 pid <- Sys.getpid()
+cat("\nPID is ", pid, "\n")
+
+
 startExecTime <- format(Sys.time())
 write.table(file = "pid.txt", pid,
             row.names = FALSE,
@@ -354,6 +358,9 @@ if(checkpoint.num < 1) {
 
     load("inputData.RData")
 
+    if(!is.numeric(inputData$chromosome))
+      caughtUserError.Web("Chromosome contains non-numeric data.\n That is not allowed.\n")
+    
     if( (methodaCGH == "ACE") & (length(unique(inputData$chromosome)) == 1))
         caughtOurError.Web(paste("There is a bug in the code that does not allow ACE",
                              "to run with only one chromosome. We are working on it."))
@@ -362,6 +369,9 @@ if(checkpoint.num < 1) {
         caughtUserError.Web("Your aCGH file contains missing values. \n That is not allowed.\n")
     }
     xcenter <- inputData[, -c(1, 2, 3)]
+
+    
+
     
     if(any(!(apply(xcenter, 2, is.numeric))))  {
         caughtUserError.Web("Your aCGH file contains non-numeric data. \n That is not allowed.\n")

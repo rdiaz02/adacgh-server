@@ -598,23 +598,25 @@ def my_queue(MAX_NUM_PROCS,
     OK, otherwise return Failed"""
     out_value = 'OK'
     startTime = time.time()
-    while True:
-##        killedlamandr = os.system('/http/mpi.log/killOldLamAllMachines.py')
-        issue_echo('     inside my_queue ', tmpDir)
-        if (time.time() - startTime) > MAX_DURATION_TRY:
-            out_value = 'Failed'
-            break
-        num_lamd = int(os.popen('pgrep -u www-data lamd | wc').readline().split()[0])
-        num_sentinel = int(len(glob.glob(''.join([runningProcs, '/sentinel.lam.*']))))
-        if (num_lamd < (MAX_NUM_PROCS + ADD_PROCS)) and (num_sentinel < MAX_NUM_PROCS):
-            issue_echo('     OK; num_lamd = ' + str(num_lamd) + \
-                       '; num_sentinel = ' + str(num_sentinel), tmpDir)
-            break
-        else:
-	    issue_echo('     wait:  num_lamd = ' + str(num_lamd) + \
-                       '; num_sentinel = ' + str(num_sentinel), tmpDir)
-            time.sleep(CHECK_QUEUE + random.uniform(0.1, 5))
+## We no longer check for room!!
     return out_value
+#     while True:
+# ##        killedlamandr = os.system('/http/mpi.log/killOldLamAllMachines.py')
+#         issue_echo('     inside my_queue ', tmpDir)
+#         if (time.time() - startTime) > MAX_DURATION_TRY:
+#             out_value = 'Failed'
+#             break
+#         num_lamd = int(os.popen('pgrep -u www-data lamd | wc').readline().split()[0])
+#         num_sentinel = int(len(glob.glob(''.join([runningProcs, '/sentinel.lam.*']))))
+#         if (num_lamd < (MAX_NUM_PROCS + ADD_PROCS)) and (num_sentinel < MAX_NUM_PROCS):
+#             issue_echo('     OK; num_lamd = ' + str(num_lamd) + \
+#                        '; num_sentinel = ' + str(num_sentinel), tmpDir)
+#             break
+#         else:
+# 	    issue_echo('     wait:  num_lamd = ' + str(num_lamd) + \
+#                        '; num_sentinel = ' + str(num_sentinel), tmpDir)
+#             time.sleep(CHECK_QUEUE + random.uniform(0.1, 5))
+ 
 
 def generate_lam_suffix(tmpDir):
     """As it says. Generate and write it out"""
@@ -687,15 +689,15 @@ time.sleep(random.uniform(0.1, 3)) ## Break ties if starting at identical times
 issue_echo('at 4', tmpDir)
 
 
-check_room = my_queue(MAX_NUM_PROCS)
+# check_room = my_queue(MAX_NUM_PROCS)
 issue_echo('after check_room', tmpDir)
 
-if check_room == 'Failed':
-    printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
-    writeStatusServer('ERROR!!!\n')
-    writeErrorMessage('MPI too busy. Too many jobs in the servers.' +
-                      '\nPlease try later', 'NULL')
-    sys.exit()
+# if check_room == 'Failed':
+#     printMPITooBusy(tmpDir, MAX_DURATION_TRY = 5 * 3600)
+#     writeStatusServer('ERROR!!!\n')
+#     writeErrorMessage('MPI too busy. Too many jobs in the servers.' +
+#                       '\nPlease try later', 'NULL')
+#     sys.exit()
 
 issue_echo('before lamboot', tmpDir)
 lamboot(lamSuffix, NCPU)
