@@ -157,12 +157,13 @@ acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
                      'entrez', 'ug', 'rsrna', 'rspeptide', 'hugo')
 acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
 acceptedMethodaCGH <- c ('Wavelets', 'PSW', 'DNAcopy', 'ACE', 'GLAD', 'HMM', 'BioHMM',
-                      'CGHseg')
+                      'CGHseg', 'HaarSeg')
 methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
                       'PSW'      = c('PSW.nIter', 'PSW.p.crit'),
                       'ACE'      = c('ACE.fdr'),
                       'CGHseg'   = c('CGHseg.s')
                       )
+## zz: should we place an m option for HaarSeg
 acceptedColors <- colors()
 
 
@@ -415,6 +416,10 @@ if(checkpoint.num < 1) {
     
     numarrays <- ncol(xcenter)
     chromnum <- length(unique(common.data$Chromosome))
+
+    if(any(table(common.data$Chromosome) < 10))
+      caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\That is not allowed.\n")
+
     doCheckpoint(1)
     
     cat("\n gc right after checkpoint 1 \n")
