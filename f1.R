@@ -161,7 +161,8 @@ acceptedMethodaCGH <- c ('Wavelets', 'PSW', 'DNAcopy', 'ACE', 'GLAD', 'HMM', 'Bi
 methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
                       'PSW'      = c('PSW.nIter', 'PSW.p.crit'),
                       'ACE'      = c('ACE.fdr'),
-                      'CGHseg'   = c('CGHseg.s')
+                      'CGHseg'   = c('CGHseg.s'),
+                      'HaarSeg'  = c('HaarSeg.m')
                       )
 ## zz: should we place an m option for HaarSeg
 acceptedColors <- colors()
@@ -332,9 +333,12 @@ sed.command <- paste("sed -i 's/RprocessPid\t",
                      lamSESSION, "\t", hostn, "/' ",
                      "/http/mpi.log/LAM_SUFFIX_Log",
                      sep = "")
+
+
 system(sed.command)
 
-
+cat("\n\n Did sed.command ")
+cat(sed.command)
 
 
 
@@ -418,7 +422,7 @@ if(checkpoint.num < 1) {
     chromnum <- length(unique(common.data$Chromosome))
 
     if(any(table(common.data$Chromosome) < 10))
-      caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\That is not allowed.\n")
+      caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\n That is not allowed.\n")
 
     doCheckpoint(1)
     
@@ -461,7 +465,8 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                         Pos = common.data$MidPoint,
                                         mergeSegs = mergeRes,
                                         minDiff = force(Wave.minDiff),
-                                        CGHseg.thres = force(CGHseg.s))
+                                        CGHseg.thres = force(CGHseg.s),
+                                        HaarSeg.m = force(HaarSeg.m))
                        })
         
         if(inherits(trythis, "try-error"))
