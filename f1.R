@@ -25,6 +25,17 @@
 ######################################################################
 ######################################################################
 
+assign(".__ADaCGH_SERVER_APPL", TRUE)
+library(Hmisc, verbose = FALSE)
+library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
+## but we must mask certain defs. in waveslim. So load
+## waveslim here
+library(ADaCGH, verbose = FALSE)
+cat("\nADaCGH Version :")
+packageDescription("ADaCGH")$Version
+cat("\n\n")
+
+
 ##############################################
 ##############################################
 ######                              ##########
@@ -35,26 +46,17 @@
 ######                              ##########
 ##############################################
 ##############################################
-doCheckpoint <- function(num) {
-    checkpoint.num.new <- num
-    save.image()
-    checkpoint.num <<- num
-    sink("checkpoint.num")
-    cat(num)
-    sink()
-}
 
-mpi.clean.quit.Web <- function() {
-    if (is.loaded("mpi_initialize")){ 
-        if (mpi.comm.size(1) > 0){ 
-            try(mpi.close.Rslaves() , silent = TRUE)
-        } 
-    }
-    try(mpi.exit(), silent = TRUE)
-}
+
+### We will use hidden stuff from ADaCGH
+doCheckpoint <- ADaCGH:::doCheckpoint
+caughtUserError.Web <- ADaCGH:::caughtUserError.Web
+caughtOurError.Web <- ADaCGH:::caughtOurError.Web
+
+
 
 NormalTermination <- function(){
-    mpi.clean.quit.Web()
+    ADaCGH:::mpi.clean.quit.Web()
     status <- file("R_Status.txt", "w")
     cat("Normal termination\n", file = status)
     flush(status)
@@ -77,62 +79,8 @@ NormalTermination <- function(){
   
 ## }
 
-caughtOtherError.Web <- function(message) {
-    mpi.clean.quit.Web()
-    sink(file = "R_Error_msg.txt")
-    cat(message)
-    cat("\n")
-    sink()
-    sink(file = "R_Status.txt")
-    cat("Other Error\n\n")
-    sink()
-    quit(save = "no", status = 11, runLast = FALSE)
-}
-
-caughtOtherPackageError.Web <- function(message) {
-    mpi.clean.quit.Web()
-    message <- paste("This is a known problem in a package we depend upon. ",
-                     message)
-    sink(file = "R_Error_msg.txt")
-    cat(message)
-    cat("\n")
-    sink()
-    sink(file = "R_Status.txt")
-    cat("Other Error\n\n")
-    sink()
-    quit(save = "no", status = 11, runLast = FALSE)
-}
-
-caughtOurError.Web <- function(message) {
-    mpi.clean.quit.Web()
-    message <- paste("There was a problem with our code. Please let us know.\n", 
-                     message)
-    sink(file = "R_Error_msg.txt")
-    cat(message)
-    cat("\n")
-    sink()
-    sink(file = "R_Status.txt")
-    cat("Our Error\n\n")
-    sink()
-    quit(save = "no", status = 11, runLast = FALSE)
-
-}
 
 
-caughtUserError.Web <- function(message) {
-    mpi.clean.quit.Web()
-    message <- paste("There was a problem with something you did.\n",
-                     "Check the error message, your data and options and try again.\n",
-                     message, "\n")
-    sink(file = "R_Error_msg.txt")
-    cat(message)
-    cat("\n")
-    sink()
-    sink(file = "R_Status.txt")
-    cat("User Error\n\n")
-    sink()
-    quit(save = "no", status = 11, runLast = FALSE)
-}
 
 
 readOptions <- function(x) {
@@ -268,8 +216,6 @@ system(paste("mv ../../R.running.procs/", new.name1,
              " ../../R.running.procs/", new.name,
              sep = ""))
 
-
-
 checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
 
 ## defaults for DNA copy and other defaults or options that will get overwritten
@@ -278,6 +224,12 @@ DNA.undo.splits = "prune" ## don't touch this
 DNA.undo.sd = 3  ## not needed, really
 Wave.minDiff <- CGHseg.s <- NA
 mergeRes <- 1
+png.width = 400
+png.height = 400
+png.pointsize = 10
+# png.family = "Helvetica"
+
+
 
 trythis <- try({options <- readOptions("options.txt")})
 if(inherits(trythis, "try-error"))
@@ -295,36 +247,19 @@ colorsWavi <- c(colorNoChange, colorGain, colorLoss, colorSmooth, "black")
 
 checkMethodOptions(methodaCGH, methodOptions, options)    
 
-assign(".__ADaCGH_SERVER_APPL", TRUE)
 
 
-########################################################
-
-########################################################
-
-library(Hmisc, verbose = FALSE)
-library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
-## but we must mask certain defs. in waveslim. So load
-## waveslim here
-library(ADaCGH, verbose = FALSE)
-
-cat("\nADaCGH Version :")
-packageDescription("ADaCGH")$Version
-
-cat("\n\n")
-
-
+#################################################################
+## MPI, LAM, etc.
+## enter info into lam suffix log table
 
 library(Rmpi)
-
 trylam <- try(
               lamSESSION <- scan("lamSuffix", sep = "\t",
                                  what = "",
                                  strip.white = TRUE)
               )
 
-#################################################################
-## enter info into lam suffix log table
 
 tmpDir <- getwd()
 sed.command <- paste("sed -i 's/RprocessPid\\t",
@@ -335,7 +270,6 @@ sed.command <- paste("sed -i 's/RprocessPid\\t",
 ##                     "/http/mpi.log/LAM_SUFFIX_Log",
                      sep = "")
 
-
 system(sed.command)
 
 cat("\n\n Did sed.command ")
@@ -343,12 +277,9 @@ cat(sed.command)
 
 
 
-png.width = 400
-png.height = 400
-png.pointsize = 10
-# png.family = "Helvetica"
+##################################
+#### Other defaults
 
-warningsForUsers <- vector()
 
 #######################################################
 #######################################################
@@ -425,7 +356,7 @@ if(checkpoint.num < 1) {
     if(any(table(common.data$Chromosome) < 10))
       caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\n That is not allowed.\n")
 
-    doCheckpoint(1)
+    checkpoint.num <- doCheckpoint(1)
     
     cat("\n gc right after checkpoint 1 \n")
     gc()
@@ -464,7 +395,7 @@ sink()
 
 
 if(! (methodaCGH %in% c("PSW", "ACE"))) {
-    doCheckpoint(2)
+    checkpoint.num <- doCheckpoint(2)
     
     if(checkpoint.num < 3) {
         
@@ -496,13 +427,13 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         custom.out1(custom.common, segmres, arrayNames)
         
         rm(adacgh.server.output)
-        doCheckpoint(3)
+        checkpoint.num <- doCheckpoint(3)
         cat("\n gc right after checkpoint 3 \n")
         print(gc())
     }
     if(checkpoint.num < 4) {
         ## the MCR stuff
-        doCheckpoint(4)
+        checkpoint.num <- doCheckpoint(4)
     }
     if(checkpoint.num < 5) {
         trythis <- try(
@@ -571,7 +502,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
 ##                                     commondata = common.data))
 ##         if(inherits(trythis, "try-error"))
 ##             caughtOurError.Web(trythis)
-        doCheckpoint(5)
+        checkpoint.num <- doCheckpoint(5)
         NormalTermination()
     }
 } else if(methodaCGH == "PSW") {
@@ -585,7 +516,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
 #######################################################
 #######################################################
 #######################################################
-    doCheckpoint(2)
+    checkpoint.num <- doCheckpoint(2)
 
     if(checkpoint.num < 3) {
         ## Gains
@@ -606,7 +537,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                  trythis, ". \n Please let us know so we can fix the code."))
         writeResults(out.gains, commondata = common.data,
                      file = "Gains.Price.Smith.Waterman.results.txt")
-        doCheckpoint(3)
+        checkpoint.num <- doCheckpoint(3)
     }
     if(checkpoint.num < 4) {
         
@@ -631,7 +562,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                      file = "Losses.Price.Smith.Waterman.results.txt")
         save(file = "PSW.RData", list = ls(all.names = TRUE))
         ADaCGH:::PSWtoPaLS()
-        doCheckpoint(4)
+        checkpoint.num <- doCheckpoint(4)
     }
     if(checkpoint.num < 5) {
         segmentPlot(out.gains, geneNames = common.data$ID,
@@ -642,7 +573,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                     arraynames = arrayNames,
                     cghdata = xcenter,
                     idtype = idtype, organism = organism)
-        doCheckpoint(5)
+        checkpoint.num <- doCheckpoint(5)
         NormalTermination()
     }
     
@@ -666,7 +597,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
             caughtOurError.Web(paste("Function pSegmentACE bombed unexpectedly with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         ##save.image()
-        doCheckpoint(2)
+        checkpoint.num <- doCheckpoint(2)
     }
 
     if(checkpoint.num < 3) {
@@ -726,7 +657,7 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
             caughtOurError.Web(paste("Error in ACE plots  with error",
                                  trythis, ". \n Please let us know so we can fix the code."))
         save(file = "ace.RData", list = ls())
-        doCheckpoint(3)
+        checkpoint.num <- doCheckpoint(3)
         NormalTermination()
     }
 }
