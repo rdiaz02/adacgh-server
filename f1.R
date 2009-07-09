@@ -327,11 +327,12 @@ trylam <- try(
 ## enter info into lam suffix log table
 
 tmpDir <- getwd()
-sed.command <- paste("sed -i 's/RprocessPid\t",
-                     lamSESSION, "\t", hostn, "/",
-                     pid, "\t",
-                     lamSESSION, "\t", hostn, "/' ",
-                     "/http/mpi.log/LAM_SUFFIX_Log",
+sed.command <- paste("sed -i 's/RprocessPid\\t",
+                     lamSESSION, "\\t", hostn, "/",
+                     pid, "\\t",
+                     lamSESSION, "\\t", hostn, "/' ",
+                     "/http/adacgh-server/runs-tmp/logs/LAM_SUFFIX_Log",
+##                     "/http/mpi.log/LAM_SUFFIX_Log",
                      sep = "")
 
 
@@ -437,12 +438,24 @@ options(warn = -1)
 
 ### Launch Rmpi as late as possible with only the minimum possible slaves
 
+
+print(system("lamnodes"))
+
+print(paste("Universe size is ", mpi.universe.size()))
+
+
 ##try({
 usize <- min(numarrays * chromnum, mpi.universe.size())
 ## make sure at least two, o.w. rsprng won't work, and
 ## we do not want to hack my mpiInit.
+
+print(paste("usize is", usize))
+
 usize <- max(2, usize)
 mpiInit(universeSize = usize, exit_on_fail = TRUE)
+
+print("after mpiInit")
+
 cat("\n\nAbout to print mpiOK file\n")
 sink(file = "mpiOK")
 cat("MPI started OK\n")
@@ -495,12 +508,12 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         trythis <- try(
                        segmentPlot(segmres, geneNames = common.data$ID,
                                    chrom.numeric = common.data$Chromosome,
-                                   cghdata = NULL,
+##                                   cghdata = NULL,
                                    arraynames = arrayNames,
                                    yminmax = c(ymin, ymax),
                                    idtype = idtype,
                                    organism = organism,
-                                   numarrays = numarrays,
+##                                   numarrays = numarrays,
                                    colors = colorsWavi,
                                    html_js = FALSE,
                                    superimp = FALSE,
@@ -539,8 +552,11 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
                                    imgheight = 350))
         if(inherits(trythis, "try-error"))
             caughtOurError.Web(trythis)
-        system('mmv "*" "BW_#1"')
-        system('cp * ../.')
+        files.in.BW <- dir()
+        for (ffbw in files.in.BW) file.rename(ffbw, paste("BW_", ffbw, sep = ""))
+        file.copy(from = dir(), to = dir1)
+##         system('mmv "*" "BW_#1"')
+##         system('cp * ../.')
         setwd(dir1)
         mpi.remote.exec(setwd(dir1))
         

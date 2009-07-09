@@ -366,7 +366,7 @@ def lam_crash_log(tmpDir, value):
 def recover_from_lam_crash(tmpDir, NCPU, MAX_NUM_PROCS, lamSuffix,
                            runningProcs= runningProcs,
                            machine_root = 'karl'):
-    """Check if lam crashed during R run. If it did, restart R
+    """ lam crashed during R run. Restart R
     after possibly rebooting the lam universe.
     Leave a trace of what happened."""
     
@@ -402,7 +402,7 @@ def Rrun(tmpDir, lamSuffix):
     """ Launch R, after setting the lam stuff."""
     Rcommand = 'export LAM_MPI_SESSION_SUFFIX="' + lamSuffix + \
                '"; cd ' + tmpDir + \
-               '; sleep 1; /http/R-patched4/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> R_Status.txt &'
+               '; sleep 1; /var/www/bin/R-local-7-LAM-MPI/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> R_Status.txt &'
 ##               '; sleep 1; /http/R-custom/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> Status.msg &'
     Rtorun = os.system(Rcommand)
     
@@ -707,7 +707,10 @@ add_to_LAM_SUFFIX_LOG(lamSuffix, 'ADaCGH-server', tmpDir,
                       socket.gethostname())
 
 ## start R
+
+
 Rrun(tmpDir, lamSuffix)
+issue_echo('         at          A1', tmpDir)
         
 time_start = time.time()
 time.sleep(TIME_BETWEEN_CHECKS + random.uniform(0.1, 3))
@@ -725,6 +728,7 @@ while True:
         ### FIXME: what about PaLS, etc? See old "printOKRun()"
         break
     elif (status_run(tmpDir) == 'R_User_Error'):
+        
         issue_echo(status_run(tmpDir), tmpDir)
         cleanups(tmpDir, newDir, lamSuffix)
         writeStatusServer('User ERROR\n')
