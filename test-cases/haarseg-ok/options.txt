@@ -1,0 +1,8 @@
+method	HaarSeg
+idtype	None
+organism	None
+HaarSeg.m	2
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
