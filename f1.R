@@ -26,6 +26,14 @@
 ######################################################################
 
 assign(".__ADaCGH_SERVER_APPL", TRUE)
+
+### For testing this script, set the above to false
+
+if(! .__ADaCGH_SERVER_APPL) rm(list = ls())
+
+
+
+
 library(Hmisc, verbose = FALSE)
 library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
 ## but we must mask certain defs. in waveslim. So load
@@ -186,38 +194,44 @@ custom.out1 <- function(custom.common = custom.common,
 ##############################################
 ##############################################
 
-version
-system("hostname")
-cat("\nRunning\n", file = "R_Status.txt")
-hostn <- system("hostname", intern = TRUE)
-pid <- Sys.getpid()
-cat("\nPID is ", pid, "\n")
 
-
-startExecTime <- format(Sys.time())
-write.table(file = "pid.txt", pid,
-            row.names = FALSE,
-            col.names = FALSE)
-
-sink(file = "current_R_proc_info")
-cat(hostn)
-cat("  ")
-cat(pid)
-cat("\n")
-sink()
+if (.__ADaCGH_SERVER_APPL) {
+  version
+  system("hostname")
+  cat("\nRunning\n", file = "R_Status.txt")
+  hostn <- system("hostname", intern = TRUE)
+  pid <- Sys.getpid()
+  cat("\nPID is ", pid, "\n")
+  
+  
+  startExecTime <- format(Sys.time())
+  write.table(file = "pid.txt", pid,
+              row.names = FALSE,
+              col.names = FALSE)
+  
+  sink(file = "current_R_proc_info")
+  cat(hostn)
+  cat("  ")
+  cat(pid)
+  cat("\n")
+  sink()
 
 
 ## attach pid to name in R.running.procs
-new.name1 <- unlist(strsplit(getwd(), "/"))
-new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
-new.name <- paste("R.", new.name1, "%", pid, sep = "")
-new.name1 <- paste("R.", new.name1, sep = "")
-system(paste("mv ../../R.running.procs/", new.name1,
-             " ../../R.running.procs/", new.name,
-             sep = ""))
+  new.name1 <- unlist(strsplit(getwd(), "/"))
+  new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
+  new.name <- paste("R.", new.name1, "%", pid, sep = "")
+  new.name1 <- paste("R.", new.name1, sep = "")
+  system(paste("mv ../../R.running.procs/", new.name1,
+               " ../../R.running.procs/", new.name,
+               sep = ""))
+  
+  checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
+} else {
+  checkpoint.num <- 0
+}
 
-checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
-
+  
 ## defaults for DNA copy and other defaults or options that will get overwritten
 ## if needed
 DNA.undo.splits = "prune" ## don't touch this
@@ -254,27 +268,28 @@ checkMethodOptions(methodaCGH, methodOptions, options)
 ## enter info into lam suffix log table
 
 library(Rmpi)
-trylam <- try(
-              lamSESSION <- scan("lamSuffix", sep = "\t",
-                                 what = "",
-                                 strip.white = TRUE)
-              )
 
 
-tmpDir <- getwd()
-sed.command <- paste("sed -i 's/RprocessPid\\t",
-                     lamSESSION, "\\t", hostn, "/",
-                     pid, "\\t",
-                     lamSESSION, "\\t", hostn, "/' ",
-                     "/http/adacgh-server/runs-tmp/logs/LAM_SUFFIX_Log",
-##                     "/http/mpi.log/LAM_SUFFIX_Log",
-                     sep = "")
-
-system(sed.command)
-
-cat("\n\n Did sed.command ")
-cat(sed.command)
-
+if (.__ADaCGH_SERVER_APPL) {
+  trylam <- try(
+                lamSESSION <- scan("lamSuffix", sep = "\t",
+                                   what = "",
+                                   strip.white = TRUE)
+                )
+  tmpDir <- getwd()
+  sed.command <- paste("sed -i 's/RprocessPid\\t",
+                       lamSESSION, "\\t", hostn, "/",
+                       pid, "\\t",
+                       lamSESSION, "\\t", hostn, "/' ",
+                       "/http/adacgh-server/runs-tmp/logs/LAM_SUFFIX_Log",
+                       ##                     "/http/mpi.log/LAM_SUFFIX_Log",
+                       sep = "")
+  
+  system(sed.command)
+  
+  cat("\n\n Did sed.command ")
+  cat(sed.command)
+}
 
 
 ##################################
@@ -374,23 +389,27 @@ print(system("lamnodes"))
 
 print(paste("Universe size is ", mpi.universe.size()))
 
-
 ##try({
 usize <- min(numarrays * chromnum, mpi.universe.size())
 ## make sure at least two, o.w. rsprng won't work, and
 ## we do not want to hack my mpiInit.
-
 print(paste("usize is", usize))
 
-usize <- max(2, usize)
-mpiInit(universeSize = usize, exit_on_fail = TRUE)
 
-print("after mpiInit")
+if (.__ADaCGH_SERVER_APPL) {
+  usize <- max(2, usize)
+  mpiInit(universeSize = usize, exit_on_fail = TRUE)
+  print("after mpiInit")
+  cat("\n\nAbout to print mpiOK file\n")
+  sink(file = "mpiOK")
+  cat("MPI started OK\n")
+  sink()
+} else {
+  mpiInit(universeSize = mpi.universe.size(), exit_on_fail = FALSE)
+}
 
-cat("\n\nAbout to print mpiOK file\n")
-sink(file = "mpiOK")
-cat("MPI started OK\n")
-sink()
+
+
 ###})
 
 
