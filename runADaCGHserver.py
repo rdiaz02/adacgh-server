@@ -35,7 +35,7 @@ import fcntl
 
 
 R_MAX_time = 196 * 3600 ## 12 hours is max duration allowd for any process
-TIME_BETWEEN_CHECKS = 45
+TIME_BETWEEN_CHECKS = 23
 MAX_MPI_CRASHES = 20
 
 

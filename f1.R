@@ -458,12 +458,9 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
         trythis <- try(
                        segmentPlot(segmres, geneNames = common.data$ID,
                                    chrom.numeric = common.data$Chromosome,
-##                                   cghdata = NULL,
-                                   arraynames = arrayNames,
                                    yminmax = c(ymin, ymax),
                                    idtype = idtype,
                                    organism = organism,
-##                                   numarrays = numarrays,
                                    colors = colorsWavi,
                                    html_js = FALSE,
                                    superimp = FALSE,
