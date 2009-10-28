@@ -16,6 +16,12 @@
 #### USA.
 
 
+#### FIXME: start MPI only when needed.
+#### Launch only the minimally needed number of nodes.
+#### Minimize sending? Grab data from directory?
+#### Clean up all code and delete unused methods.
+#### Use MPI only if justified (more than one or array)
+
 #### For easier debugging: we go saving results as things go along.
 
 
@@ -136,8 +142,8 @@ t.opt.assign <- function(nameopt, options) {
 checkMethodOptions <- function(methodaCGH, method.options, options) {
     indexopts <- which(names(method.options) == methodaCGH)
     if(length(indexopts) > 0)
-        sapply(method.options[[indexopts]],
-               function(x) t.opt.assign(x, options))
+        null <- sapply(method.options[[indexopts]],
+                  function(x) t.opt.assign(x, options))
 }
 
 
@@ -320,7 +326,7 @@ if(checkpoint.num < 1) {
     if(any(is.na(inputData))) {
         caughtUserError.Web("Your aCGH file contains missing values. \n That is not allowed.\n")
     }
-    xcenter <- inputData[, -c(1, 2, 3)]
+    xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
 
     
 
@@ -452,7 +458,9 @@ if(! (methodaCGH %in% c("PSW", "ACE"))) {
     }
     if(checkpoint.num < 4) {
         ## the MCR stuff
-        checkpoint.num <- doCheckpoint(4)
+## FIXME!!! make: doCheckpoint(4, save = FALSE) after we use the new version of the pack.
+##        checkpoint.num <- doCheckpoint(4)
+        checkpoint.num <- doCheckpoint(4, save = FALSE)
     }
     if(checkpoint.num < 5) {
         trythis <- try(
