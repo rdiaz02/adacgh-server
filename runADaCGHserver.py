@@ -442,6 +442,11 @@ def did_R_crash_in_slaves(tmpDir, machine_root = 'karl'):
     lam_logs = glob.glob(tmpDir + '/' + machine_root + '*.*.*.log')
     in_lam_logs = 0
     for lam_log in lam_logs:
+        # I could do it more pythonically:
+        # t1 = open(lam_log).read().find(R_LAM_MSGS)
+        # if t1 > -1 ...
+        # But use a try to protect for non-existing files
+        
         tmp1 = int(os.popen('grep "' + R_LAM_MSGS + '" ' + \
                             lam_log + ' | wc').readline().split()[0])
         if tmp1 > 0:
@@ -639,6 +644,10 @@ def generate_lam_suffix(tmpDir):
 ## Starting. First, the very first run.
 
 
+## Clean up lam
+os.system('/http/mpi.log/killOldLam.py')
+
+
 ##(newDir, tmpDir) = create_tmpDir()
 
 tmpDir = inputDir
@@ -798,6 +807,10 @@ while True:
     time.sleep(TIME_BETWEEN_CHECKS)
 
 
+issue_echo('before LAM clean up', tmpDir)
+
+## Clean up lam systemwide (a favor for future runs)
+os.system('/http/mpi.log/killOldLamAllMachines.py')
 
 issue_echo('at the very end!', tmpDir)
 
