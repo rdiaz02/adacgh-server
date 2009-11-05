@@ -1,0 +1,7 @@
+method	DNAcopy
+idtype	None
+organism	None
+colorNoChange	black
+colorGain	green
+colorLoss	red
+colorSmooth	pink

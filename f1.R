@@ -24,9 +24,6 @@
 
 #### For easier debugging: we go saving results as things go along.
 
-
-## rm(list = ls()) ## Just in case.
-
 ######################################################################
 ######################################################################
 ######################################################################
@@ -62,8 +59,26 @@ cat("\n\n")
 ##############################################
 
 
+doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
+##    checkpoint.num.new <- num
+  if(!is.null(to.save)) {
+    save(file = ".RData", list = to.save, envir = .GlobalEnv)
+    if(delete.rest) {
+      to.delete <- setdiff(ls(envir = .GlobalEnv), to.save)
+      rm(list = to.delete, envir = .GlobalEnv)
+    }
+  }
+##    checkpoint.num <<- num
+    sink("checkpoint.num")
+    cat(num)
+    sink()
+    return(num)
+}
+
+
+
 ### We will use hidden stuff from ADaCGH
-doCheckpoint <- ADaCGH:::doCheckpoint
+#doCheckpoint <- ADaCGH:::doCheckpoint
 caughtUserError.Web <- ADaCGH:::caughtUserError.Web
 caughtOurError.Web <- ADaCGH:::caughtOurError.Web
 
@@ -73,26 +88,9 @@ NormalTermination <- function(){
     cat("Normal termination\n", file = status)
     flush(status)
     close(status)
-    ##save.image()
     cat("\n\n Normal termination\n")
-    ## In case the CGI is not called (user kills browser)
-    ## have a way to stop lam
-##    try(system(paste("/http/mpi.log/killLAM.py", lamSESSION, "&")))
-##     try(mpi.quit(save = "yes"), silent = TRUE)
-##    quit(save = "yes", status = 0, runLast = FALSE)
-## we no longer save. It adds time and memory
     quit(save = "no", status = 0, runLast = FALSE)
-
 }
-
-## mpiSlaveMemClean <- function() {
-##   cat("\n gc in slaves before delete \n")
-##   mpi.remote.exec(gc())
-##   mpi.remote.exec(rm(list = ls(env = .GlobalEnv), envir =.GlobalEnv))
-##   cat("\n gc in slaves after delete \n")
-##   mpi.remote.exec(gc())
-  
-## }
 
 
 readOptions <- function(x) {
@@ -116,77 +114,69 @@ checkAssign <- function(value, rangeOK, lista) {
 acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
                      'entrez', 'ug', 'rsrna', 'rspeptide', 'hugo')
 acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
-acceptedMethodaCGH <- c ('Wavelets', 'PSW', 'DNAcopy', 'ACE', 'GLAD', 'HMM', 'BioHMM',
+acceptedMethodaCGH <- c ('Wavelets', 'DNAcopy', 'GLAD', 'HMM', 'BioHMM',
                       'CGHseg', 'HaarSeg')
 methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
-                      'PSW'      = c('PSW.nIter', 'PSW.p.crit'),
-                      'ACE'      = c('ACE.fdr'),
                       'CGHseg'   = c('CGHseg.s'),
                       'HaarSeg'  = c('HaarSeg.m')
                       )
-## zz: should we place an m option for HaarSeg
 acceptedColors <- colors()
 
 
-t.opt.assign <- function(nameopt, options) {
-    ### Yes, we do assign into the global env.
-    if(!(nameopt %in% names(options)))
-        caughtUserError.Web(paste(nameopt, " not among the options."))
-    try1 <- try(assign(nameopt, as.numeric(options[[nameopt]]), envir = .GlobalEnv))
-    if(inherits(try1, "try-error"))
-        caughtUserError.Web(paste("User failure for option ", nameopt))
+
+checkConvertMethodOptions <- function(method.options, options) {
+  methodaCGH <- options[["method"]]
+  indexopts <- which(names(method.options) == methodaCGH)
+  if(length(indexopts) > 0) {
+    all.method.options <- method.options[[indexopts]]
+    for(mo in all.method.options) {
+      if(!(mo %in% names(options)))
+        caughtUserError.Web(paste(mo, " not among the options."))
+      try1 <- try(options[[mo]] <- as.numeric(options[[mo]]))
+      if(inherits(try1, "try-error"))
+        caughtUserError.Web(paste("User failure for option ", mo))
+    }
+  }
+  return(options)
 }
 
-checkMethodOptions <- function(methodaCGH, method.options, options) {
-    indexopts <- which(names(method.options) == methodaCGH)
-    if(length(indexopts) > 0)
-        null <- sapply(method.options[[indexopts]],
-                  function(x) t.opt.assign(x, options))
-}
 
 
+  custom.out1 <- function(custom.common = custom.common,
+                          segmres = segmres,
+                          arrayNames = arrayNames) {
+    
+    partC <- partB <- partA <- matrix(-9999,
+                                      nrow = nrow(custom.common),
+                                      ncol = length(arrayNames))
+    partA <- sapply(segmres[[1]], function(x) x[, 1])
+    partB <- sapply(segmres[[1]], function(x) x[, 2])
+    partC <- sapply(segmres[[1]], function(x) x[, 3])
+    colnames(partA) <- colnames(partB) <- colnames(partC) <-arrayNames
+    observed.out <- cbind(custom.common, partA)
+    rm(partA)
+    for(i in 1:3) gc()
+    segmented.out <- cbind(custom.common, partB)
+    for(i in 1:3) rm(partB)
+    calls.out <- cbind(custom.common, partC)
+    for(i in 1:3) rm(partC)
+    
+    save(file = "observed.out.RData", observed.out)
+    save(file = "segmented.out.RData", segmented.out)
+    save(file = "calls.out.RData", calls.out)
+    
+    write.table(file = "segmented.out.txt",
+                segmented.out, sep = "\t",
+                quote = FALSE, row.names = FALSE,
+                col.names = TRUE)
+    write.table(file = "calls.out.txt",
+                calls.out, sep = "\t",
+                quote = FALSE, row.names = FALSE,
+                col.names = TRUE)
+    system("chmod 777 calls.out.txt")
+  }
 
-custom.out1 <- function(custom.common = custom.common,
-                        segmres = segmres,
-                        arrayNames = arrayNames) {
-  
-  partC <- partB <- partA <- matrix(-9999,
-                                    nrow = nrow(custom.common),
-                                    ncol = length(arrayNames))
 
-##   for (i in 1:length(arrayNames)) {
-##     partA[, i] <- segmres[[i]][, 1]
-##     partB[, i] <- segmres[[i]][, 2]
-##     partC[, i] <- segmres[[i]][, 3]
-##   }
-  partA <- sapply(segmres[[1]], function(x) x[, 1])
-  partB <- sapply(segmres[[1]], function(x) x[, 2])
-  partC <- sapply(segmres[[1]], function(x) x[, 3])
-  
-  colnames(partA) <- colnames(partB) <- colnames(partC) <-arrayNames
-  observed.out <- cbind(custom.common, partA)
-  rm(partA)
-  for(i in 1:3) gc()
-  segmented.out <- cbind(custom.common, partB)
-  for(i in 1:3) rm(partB)
-  calls.out <- cbind(custom.common, partC)
-  for(i in 1:3) rm(partC)
-  
-  save(file = "observed.out.RData", observed.out)
-  save(file = "segmented.out.RData", segmented.out)
-  save(file = "calls.out.RData", calls.out)
-  
-  write.table(file = "segmented.out.txt",
-              segmented.out, sep = "\t",
-              quote = FALSE, row.names = FALSE,
-              col.names = TRUE)
-  write.table(file = "calls.out.txt",
-              calls.out, sep = "\t",
-              quote = FALSE, row.names = FALSE,
-              col.names = TRUE)
-
- system("chmod 777 calls.out.txt")
-}
     
 
 
@@ -198,7 +188,6 @@ custom.out1 <- function(custom.common = custom.common,
 ##############################################
 ##############################################
 
-
 if (.__ADaCGH_SERVER_APPL) {
   version
   system("date")
@@ -207,7 +196,6 @@ if (.__ADaCGH_SERVER_APPL) {
   hostn <- system("hostname", intern = TRUE)
   pid <- Sys.getpid()
   cat("\nPID is ", pid, "\n")
-  
   
   startExecTime <- format(Sys.time())
   write.table(file = "pid.txt", pid,
@@ -220,7 +208,6 @@ if (.__ADaCGH_SERVER_APPL) {
   cat(pid)
   cat("\n")
   sink()
-
 
 ## attach pid to name in R.running.procs
   new.name1 <- unlist(strsplit(getwd(), "/"))
@@ -237,34 +224,39 @@ if (.__ADaCGH_SERVER_APPL) {
 }
 
   
-## defaults for DNA copy and other defaults or options that will get overwritten
-## if needed
-DNA.undo.splits = "prune" ## don't touch this
-DNA.undo.sd = 3  ## not needed, really
-Wave.minDiff <- CGHseg.s <- NA
-mergeRes <- 1
-png.width = 400
-png.height = 400
-png.pointsize = 10
-# png.family = "Helvetica"
 
 
 
-trythis <- try({options <- readOptions("options.txt")})
+trythis <- try({WaviOptions <- readOptions("options.txt")})
 if(inherits(trythis, "try-error"))
   caughtUserError.Web(trythis)
 
+checkAssign("idtype", acceptedIDTypes, WaviOptions)
+checkAssign("organism", acceptedOrganisms, WaviOptions)
+checkAssign("method", acceptedMethodaCGH, WaviOptions)
+checkAssign("colorNoChange", acceptedColors, WaviOptions)
+checkAssign("colorGain", acceptedColors, WaviOptions)
+checkAssign("colorLoss", acceptedColors, WaviOptions)
+checkAssign("colorSmooth", acceptedColors, WaviOptions)
 
-idtype <- checkAssign("idtype", acceptedIDTypes, options)
-organism <- checkAssign("organism", acceptedOrganisms, options)
-methodaCGH <- checkAssign("method", acceptedMethodaCGH, options)
-colorNoChange <- checkAssign("colorNoChange", acceptedColors, options)
-colorGain <- checkAssign("colorGain", acceptedColors, options)
-colorLoss <- checkAssign("colorLoss", acceptedColors, options)
-colorSmooth <- checkAssign("colorSmooth", acceptedColors, options)
-colorsWavi <- c(colorNoChange, colorGain, colorLoss, colorSmooth, "black")
 
-checkMethodOptions(methodaCGH, methodOptions, options)    
+WaviOptions$colorsWavi <- c(WaviOptions$colorNoChange, WaviOptions$colorGain,
+                        WaviOptions$colorLoss, WaviOptions$colorSmooth,
+                        "black")
+
+WaviOptions <- checkConvertMethodOptions(methodOptions, WaviOptions)    
+
+
+## defaults for DNA copy and other defaults or options that will get overwritten
+## if needed
+
+WaviOptions$DNA.undo.splits <- "prune" ## don't touch this
+WaviOptions$png.width <- 400
+WaviOptions$png.height <- 400
+WaviOptions$png.pointsize <- 10
+if(is.null(WaviOptions$mergeRes)) WaviOptions$mergeRes <- 1
+
+
 
 
 
@@ -273,7 +265,6 @@ checkMethodOptions(methodaCGH, methodOptions, options)
 ## enter info into lam suffix log table
 
 library(Rmpi)
-
 
 if (.__ADaCGH_SERVER_APPL) {
   trylam <- try(
@@ -297,9 +288,6 @@ if (.__ADaCGH_SERVER_APPL) {
 }
 
 
-##################################
-#### Other defaults
-
 
 #######################################################
 #######################################################
@@ -312,25 +300,18 @@ if (.__ADaCGH_SERVER_APPL) {
 #######################################################
 
 if(checkpoint.num < 1) {
-
-    load("inputData.RData")
-
-    if(!is.numeric(inputData$chromosome))
-      caughtUserError.Web("Chromosome contains non-numeric data.\n That is not allowed.\n")
-    
-    if( (methodaCGH == "ACE") & (length(unique(inputData$chromosome)) == 1))
-        caughtOurError.Web(paste("There is a bug in the code that does not allow ACE",
-                             "to run with only one chromosome. We are working on it."))
-
-    if(any(is.na(inputData))) {
-        caughtUserError.Web("Your aCGH file contains missing values. \n That is not allowed.\n")
-    }
-    xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
-
-    
-
-    
-    if(any(!(apply(xcenter, 2, is.numeric))))  {
+  load("inputData.RData")
+  
+  if(!is.numeric(inputData$chromosome))
+    caughtUserError.Web("Chromosome contains non-numeric data.\n That is not allowed.\n")
+  
+  
+  if(any(is.na(inputData))) {
+    caughtUserError.Web("Your aCGH file contains missing values. \n That is not allowed.\n")
+  }
+  xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
+  
+  if(any(!(apply(xcenter, 2, is.numeric))))  {
         caughtUserError.Web("Your aCGH file contains non-numeric data. \n That is not allowed.\n")
     }
     
@@ -367,21 +348,29 @@ if(checkpoint.num < 1) {
     tmp <- paste(common.data$Chromosome, common.data$MidPoint, sep = ".")
     if (sum(duplicated(tmp)))
         caughtOurError.Web("still duplicated MidPoints; shouldn't happen")
+  
+  numarrays <- ncol(xcenter)
+  chromnum <- length(unique(common.data$Chromosome))
+  
+  if(any(table(common.data$Chromosome) < 10))
+    caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\n That is not allowed.\n")
+  
 
+  cat("\n gc right before checkpoint 1 \n")
+  print(gc())
 
-    
-    numarrays <- ncol(xcenter)
-    chromnum <- length(unique(common.data$Chromosome))
-
-    if(any(table(common.data$Chromosome) < 10))
-      caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\n That is not allowed.\n")
-
-    checkpoint.num <- doCheckpoint(1)
-    
-    cat("\n gc right after checkpoint 1 \n")
-    gc()
-
+  to.save <- c("numarrays", "xcenter", "chromnum", "common.data",
+               "arrayNames",
+               "WaviOptions", ".__ADaCGH_SERVER_APPL",
+               "doCheckpoint", "NormalTermination",
+               "caughtUserError.Web", "caughtOurError.Web",
+               "custom.out1")
+  checkpoint.num <- doCheckpoint(1, to.save)
+  
+  cat("\n gc right after checkpoint 1 \n")
+  gc()
 }
+
 
 #####################################################################
 #####################################################################
@@ -415,124 +404,118 @@ if (.__ADaCGH_SERVER_APPL) {
 
 
 
-###})
+if(checkpoint.num < 3) {
+  
+  ymax <- max(as.matrix(xcenter))
+  ymin <- min(as.matrix(xcenter))
+
+  trythis <- try({
+    fseg <- get(paste("pSegment", WaviOptions$method, sep = ""))
+    segmres <- fseg(as.matrix(xcenter),
+                    chrom.numeric = common.data$Chromosome,
+                    Pos = common.data$MidPoint,
+                    mergeSegs = WaviOptions$mergeRes,
+                    minDiff = force(WaviOptions$Wave.minDiff),
+                    CGHseg.thres = force(WaviOptions$CGHseg.s),
+                    HaarSeg.m = force(WaviOptions$HaarSeg.m))
+  })
+  
+  if(inherits(trythis, "try-error"))
+    caughtOurError.Web(trythis)
+  cat("\n\n Segmentation done \n\n")
+  save(segmres, file = "segmres.RData")
+  adacgh.server.output <- segmres[[1]]
+  save(adacgh.server.output, file = "adacgh.server.output.RData")
+  
+  custom.common <- data.frame(ProbeName = common.data$ID,
+                              Chr = common.data$Chromosome,
+                              Position = common.data$MidPoint)
+
+  
+  
+  custom.out1(custom.common, segmres, arrayNames)
+  
+  rm(adacgh.server.output)
+
+  cat("\n gc right before checkpoint 3 \n")
+  print(gc())
+  
+  to.save <- c("ymax", "ymin", "segmres",
+               "arrayNames",
+               "numarrays", "xcenter", "chromnum", "common.data",
+               "WaviOptions", ".__ADaCGH_SERVER_APPL",
+               "doCheckpoint", "NormalTermination",
+               "caughtUserError.Web", "caughtOurError.Web")
+
+  checkpoint.num <- doCheckpoint(3, to.save)
+  cat("\n gc right after checkpoint 3 \n")
+  print(gc())
+}
 
 
-## if(! (methodaCGH %in% c("PSW", "ACE"))) {
+if(checkpoint.num < 5) {
+  trythis <- try(
+                 segmentPlot(segmres, geneNames = common.data$ID,
+                             chrom.numeric = common.data$Chromosome,
+                             yminmax = c(ymin, ymax),
+                             idtype = WaviOptions$idtype,
+                             organism = WaviOptions$organism,
+                             colors = WaviOptions$colorsWavi,
+                             html_js = FALSE,
+                             superimp = FALSE,
+                             imgheight = 350))
+  if(inherits(trythis, "try-error"))
+    caughtOurError.Web(trythis)
+  cat("\n\n Plotting done \n\n")
+  cat("\n gc right after plotting \n")
+  print(gc())
 
-  checkpoint.num <- doCheckpoint(2)
-    
-    if(checkpoint.num < 3) {
-        
-        ymax <- max(as.matrix(xcenter))
-        ymin <- min(as.matrix(xcenter))
-##        numarrays <- ncol(xcenter)
-        trythis <- try({Wave.minDiff
-                        fseg <- get(paste("pSegment", methodaCGH, sep = ""))
-                        segmres <- fseg(as.matrix(xcenter),
-                                        chrom.numeric = common.data$Chromosome,
-                                        Pos = common.data$MidPoint,
-                                        mergeSegs = mergeRes,
-                                        minDiff = force(Wave.minDiff),
-                                        CGHseg.thres = force(CGHseg.s),
-                                        HaarSeg.m = force(HaarSeg.m))
-                       })
-        
-        if(inherits(trythis, "try-error"))
-            caughtOurError.Web(trythis)
-        cat("\n\n Segmentation done \n\n")
-        save(segmres, file = "segmres.RData")
-        adacgh.server.output <- segmres[[1]]
-        save(adacgh.server.output, file = "adacgh.server.output.RData")
+  
+  ## Plots without colours
+  ## As plots would get overwritten I create a new dir, etc.
+  dir1 <- getwd()
+  dir.create("BW")
+  setwd("BW")
+  print(getwd())
+  mpi.remote.exec(setwd("BW"))
+  trythis <- try(
+                 segmentPlot(segmres, geneNames = common.data$ID,
+                             chrom.numeric = common.data$Chromosome,
+                             cghdata = NULL,
+                             arraynames = arrayNames,
+                             yminmax = c(ymin, ymax),
+                             idtype = WaviOptions$idtype,
+                             organism = WaviOptions$organism,
+                             numarrays = numarrays,
+                             colors = c(rep("black", 3), "blue"),
+                             html_js = FALSE,
+                             superimp = FALSE,
+                             imgheight = 350))
+  if(inherits(trythis, "try-error"))
+    caughtOurError.Web(trythis)
+  files.in.BW <- dir()
+  for (ffbw in files.in.BW) file.rename(ffbw, paste("BW_", ffbw, sep = ""))
+  file.copy(from = dir(), to = dir1)
+  ##         system('mmv "*" "BW_#1"')
+  ##         system('cp * ../.')
+  setwd(dir1)
+  mpi.remote.exec(setwd(dir1))
+  
+  cat("\n\n Plotting done \n\n")
+  cat("\n gc right after plotting \n")
+  print(gc())
 
-        custom.common <- data.frame(ProbeName = common.data$ID,
-                                    Chr = common.data$Chromosome,
-                                    Position = common.data$MidPoint)
-
-        custom.out1(custom.common, segmres, arrayNames)
-        
-        rm(adacgh.server.output)
-        checkpoint.num <- doCheckpoint(3)
-        cat("\n gc right after checkpoint 3 \n")
-        print(gc())
-    }
-    if(checkpoint.num < 4) {
-        ## the MCR stuff
-## FIXME!!! make: doCheckpoint(4, save = FALSE) after we use the new version of the pack.
-##        checkpoint.num <- doCheckpoint(4)
-        checkpoint.num <- doCheckpoint(4, save = FALSE)
-    }
-    if(checkpoint.num < 5) {
-        trythis <- try(
-                       segmentPlot(segmres, geneNames = common.data$ID,
-                                   chrom.numeric = common.data$Chromosome,
-                                   yminmax = c(ymin, ymax),
-                                   idtype = idtype,
-                                   organism = organism,
-                                   colors = colorsWavi,
-                                   html_js = FALSE,
-                                   superimp = FALSE,
-                                   imgheight = 350))
-        if(inherits(trythis, "try-error"))
-            caughtOurError.Web(trythis)
-        cat("\n\n Plotting done \n\n")
-        cat("\n gc right after plotting \n")
-        print(gc())
-        ## for wavi, we don't need this
-##         trythis <- try(writeResults(segmres,
-##                                     acghdata = as.matrix(xcenter),
-##                                     commondata = common.data))
-##         if(inherits(trythis, "try-error"))
-##             caughtOurError.Web(trythis)
-
-        ## Plots without colours
-        ## As plots would get overwritten I create a new dir, etc.
-        dir1 <- getwd()
-        dir.create("BW")
-        setwd("BW")
-        print(getwd())
-        mpi.remote.exec(setwd("BW"))
-        trythis <- try(
-                       segmentPlot(segmres, geneNames = common.data$ID,
-                                   chrom.numeric = common.data$Chromosome,
-                                   cghdata = NULL,
-                                   arraynames = arrayNames,
-                                   yminmax = c(ymin, ymax),
-                                   idtype = idtype,
-                                   organism = organism,
-                                   numarrays = numarrays,
-                                   colors = c(rep("black", 3), "blue"),
-                                   html_js = FALSE,
-                                   superimp = FALSE,
-                                   imgheight = 350))
-        if(inherits(trythis, "try-error"))
-            caughtOurError.Web(trythis)
-        files.in.BW <- dir()
-        for (ffbw in files.in.BW) file.rename(ffbw, paste("BW_", ffbw, sep = ""))
-        file.copy(from = dir(), to = dir1)
-##         system('mmv "*" "BW_#1"')
-##         system('cp * ../.')
-        setwd(dir1)
-        mpi.remote.exec(setwd(dir1))
-        
-        cat("\n\n Plotting done \n\n")
-        cat("\n gc right after plotting \n")
-        print(gc())
-
-        ### hey, we do not need this for wavi!!
-
-##         trythis <- try(writeResults(segmres,
-##                                     acghdata = as.matrix(xcenter),
-##                                     commondata = common.data))
-##         if(inherits(trythis, "try-error"))
-##             caughtOurError.Web(trythis)
+  NormalTermination()
+}
 
 
-##     This last call only adds time and memory        
-##        checkpoint.num <- doCheckpoint(5)
-        NormalTermination()
-    }
-## }
+
+
+
+
+
+
+
 
 
 
