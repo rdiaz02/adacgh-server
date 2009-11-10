@@ -39,3 +39,17 @@ tempdir2 <- function() {
 
 load("/home/ramon/bzr-local-repos/adacgh-server/test-cases/dnacopy-ok/inputData.RData")
 xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
+
+
+chopRData <- function(inputdata, chromosome) {
+
+
+}
+
+## get idea of object sizes
+
+l.cd <- function(l = 1000000) {
+  return(data.frame( ID = replicate(l, paste(sample(letters, 25), collapse ="")),
+                   Chromosome = sample(1:23, l, replace = TRUE),
+                   MidPoint = 1000 * runif(l)))
+}
