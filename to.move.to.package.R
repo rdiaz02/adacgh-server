@@ -41,10 +41,34 @@ load("/home/ramon/bzr-local-repos/adacgh-server/test-cases/dnacopy-ok/inputData.
 xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
 
 
-chopRData <- function(inputdata, chromosome) {
 
 
+chopData <- function(inputdata, commondata) {
+  chr.change <- rle(chromosome)$lengths
+  chr.start <- cumsum(chr.change)
+  chr.end <- c(1, chr.start[-length(chr.start)] + 1)
+
+  totfile <- 1
+  ## using a loop, not lapply, since totfile increased
+  for(arr in 1:numarrays) {
+    for(chr in 1:chromnum) {
+      fname <- paste("adacgh_piece", totfile, arr, chr, sep = ".")
+      assign()
+    }
+  }
+  
 }
+
+chopCommon <- function(commondata) {
+  
+}
+
+
+
+x1 <- ffdf(Chromosome = ff(inputData$chromosome, vmode = "byte"), ##numeric
+           MidPoint = ff(inputData$position, vmode = "double"))
+
+
 
 ## get idea of object sizes
 
@@ -53,3 +77,24 @@ l.cd <- function(l = 1000000) {
                    Chromosome = sample(1:23, l, replace = TRUE),
                    MidPoint = 1000 * runif(l)))
 }
+
+
+## the common part is small?? Not really
+## o1 <- l.cd()
+## print(object.size(o1), units = "M")
+## > object.size(o1)
+## 96001272 bytes
+## > print(object.size(o1), units = "M")
+## 91.6 Mb
+## > gc()
+##           used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells 1116966 59.7    3493455 186.6  3493455 186.6
+## Vcells 7123108 54.4   18664355 142.4 18173639 138.7
+## > o2 <- l.cd(2000000)
+## > gc()
+##            used  (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  3116981 166.5    8125770 434.0  7700734 411.3
+## Vcells 21123118 161.2   44573221 340.1 41123198 313.8
+## > print(object.size(o2), units = "M")
+## 183.1 Mb
+
