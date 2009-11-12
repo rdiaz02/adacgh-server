@@ -119,9 +119,6 @@ x3
 
 ### how large are ffdf objects?
 
-### we go to adacgh-server/test-cases/several-large
-
-load("inputData.RData")
 
 common.data <- data.frame(ID = inputData$ID,
                           Chromosome = inputData$chromosome, ##numeric
@@ -129,6 +126,13 @@ common.data <- data.frame(ID = inputData$ID,
 xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
 print(object.size(xcenter), units = "M") ## 235
 print(object.size(common.data), units = "M") ## 82
+
+## place, in here, the checking functions for chrom and data.
+## when converting to ff
+## Call it "checkAndConverttoff()
+##
+
+
 
 unix.time({
 xmv <- as.vector(data.matrix(xcenter))
@@ -230,52 +234,61 @@ print(object.size(ffdf2), units = "M") ## 0.1
 
 
 
+##### More checks on coversion, etc
+
+## setwd("/home/ramon/bzr-local-repos/adacgh-server/test-cases/dnacopy-ok")
+
+df1 <- as.ffdf(inputData[, c(1, 2, 3)], pattern = "/home/ramon/caca/f22")
+df2 <- as.ffdf(inputData[, c(2, 3)], pattern = "/home/ramon/caca/f23")
 
 
 
-### changing values in ff object will not work in multinode-cluster (yes in SMP)
-sfClusterEval(open(x1, readonly = FALSE))
-sfClusterApplyLB(1:15, function(i) x1[, i] <- rep(nodenum, 4)) 
-sfClusterEval(x1[, ])
-sfClusterEval(close(x1))
-sfClusterEval(filename(x1))
+### Do checks on number of values of chromosome; if more than 255, use ushort.
+df3 <- ffdf(chromosome = ff(inputData[, 2], vmode = "ubyte",
+              pattern = "/home/ramon/caca/u1"),
+            position = ff(inputData[, 3], vmode = "double",
+              pattern = "/home/ramon/caca/u1"))
 
-### Open it in master node and check what is inside
-rm(x1)
-load("x1.RData")
-open(x1)
-x1[, ] ## changes are stored (at least most of the time) in SMP
+IDs <- inputData[, 1] ## no point using an ffdf
 
 
 
 
-
-### Repeating the ff example, but by row.
-
-##   Getting and setting values of ff object in slaves
-x1 <- ff(1:18, dim = c(6, 3), filename = fullname1)
-
-close(x1)
-save(file = "x1.RData", x1)
+##### Doing some testing
 
 
-## Acessing values; read-only
-sfClusterEval(load("x1.RData"))
-sfClusterEval(open(x1, readonly = TRUE))
-sfClusterApplyLB(1:6, function(i) {list(nodenum = nodenum, values = x1[i, ])})
-sfClusterEval(close(x1))
+load("/home/ramon/bzr-local-repos/adacgh-server/test-cases/dnacopy-ok/inputData.RData")
+
+chromData <- ff(inputData[, 2], vmode = "ubyte",
+                pattern = "/home/ramon/caca/u1")
+ul <- unlist(inputData[, -c(1, 2, 3)], use.names = FALSE)
+cghData <- ff(ul, pattern = "/home/ramon/caca/f12",
+              dim = c(nrow(inputData), ncol(inputData) - 3)) 
+close(chromData)
+close(cghData)
+save(file = "chromData.RData", chromData)
+save(file = "cghData.RData", cghData)
+rm(chromData)
+rm(cghData)
+
+rm(list = ls())
+
+library(snowfall)
+sfInit(parallel = TRUE, cpus = 4, type = "MPI")
+sfLibrary(ff)
+sfLibrary(GLAD)
+sfClusterSetupRNG(type = "SPRNG")
+mydir <- "/home/ramon/caca"
+sfExport("mydir")
+setwd(mydir)
+sfClusterEval(setwd(mydir))
 
 
-## What if I change things? This does not work in multinode-cluster (yes in SMP)
-sfClusterEval(open(x1, readonly = FALSE))
-sfClusterApplyLB(1:6, function(i) x1[i, ] <- rep(nodenum, 3)) 
-sfClusterEval(x1[, ])
-sfClusterEval(close(x1))
-sfClusterEval(filename(x1))
+source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
 
-### Open it in master node and check what is inside
-rm(x1)
-load("x1.RData")
-open(x1)
-x1[, ] ## changes are stored (at least most of the time) in SMP
+
+sfExport("getChromValue", "getCGHValue", "ffListOut", "internalGLAD")
+
+## following doesn't work.
+#sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R"))
 
