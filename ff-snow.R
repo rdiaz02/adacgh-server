@@ -271,6 +271,18 @@ save(file = "cghData.RData", cghData)
 rm(chromData)
 rm(cghData)
 
+
+## create it also from a data frame (will think about speedier ways later)
+## and make it larger
+df2 <- cbind(inputData[, -c(1, 2, 3)], inputData[, -c(1, 2, 3)]) 
+df2[, c(4, 5, 6)] <- df2[, c(4, 5, 6)] + matrix(rnorm( 3 * nrow(df2)), ncol = 3)
+colnames(df2) <- letters[1:6]
+rownames(df2) <- NULL
+cghData2 <- as.ffdf(df2, pattern)
+
+
+
+
 rm(list = ls())
 
 library(snowfall)
