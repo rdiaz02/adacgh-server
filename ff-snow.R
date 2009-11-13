@@ -292,3 +292,4 @@ sfExport("getChromValue", "getCGHValue", "ffListOut", "internalGLAD")
 ## following doesn't work.
 #sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R"))
 
+pSegmentGLAD("cghData.RData", "chromData.RData")
