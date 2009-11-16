@@ -77,6 +77,22 @@ l.cd <- function(l = 1000000) {
                    Chromosome = sample(1:23, l, replace = TRUE),
                    MidPoint = 1000 * runif(l)))
 }
+<<<<<<< TREE
+
+
+
+
+
+x1 <- ffdf(a = ff(1:1000), b = ff(11:1010))
+pattern(x1) <- "/home/ramon/caca/cucu"
+
+## close, save, then open readonly
+
+
+library(snowfall)
+sfInit(parallel = TRUE, 2, "MPI")
+
+=======
 
 
 ## the common part is small?? Not really
@@ -98,3 +114,4 @@ l.cd <- function(l = 1000000) {
 ## > print(object.size(o2), units = "M")
 ## 183.1 Mb
 
+>>>>>>> MERGE-SOURCE
