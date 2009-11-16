@@ -37,6 +37,8 @@ sfClusterEval(system("hostname", intern = TRUE)) ## double check
 
 sfLibrary(ff)
 sfLibrary(GLAD)
+sfLibrary(snapCGH)
+sfLibrary(ADaCGH)
 sfClusterSetupRNG(type = "SPRNG")
 mydir <- "/http/tmp/kaka"
 sfExport("mydir")
@@ -44,17 +46,15 @@ setwd(mydir)
 sfClusterEval(setwd(mydir))
 
 ## source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
-
-
 ## upload the code somehow!! sourcing, C-c C-r, whatever
+## sfExport("getChromValue", "getCGHValue", "ffListOut", "internalGLAD", "sizesobj",
+##          "nodeWhere", "gcmessage")
 
-
-
-sfExport("getChromValue", "getCGHValue", "ffListOut", "internalGLAD", "sizesobj",
-         "nodeWhere", "gcmessage")
-
-## following doesn't work.
-#sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R"))
+source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
+sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R"))
 
 uu <- pSegmentGLAD("cghData.RData", "chromData.RData")
 uu2 <- pSegmentGLAD("cghData2.RData", "chromData.RData")
+
+uu3 <- pSegmentHaarSeg("cghData2.RData", "chromData.RData")
+uu4 <- pSegmentDNAcopy("cghData2.RData", "chromData.RData")
