@@ -383,6 +383,18 @@ if(checkpoint.num < 1) {
 }
 
 
+### With ff and new functions. Reading data, etc, is done in a child process
+### that does only that. That way, main process does not use a lot of RAM
+### Verify we are doing OK killing the child, or whatever. I think we are.
+library(multicore)
+parallel(inputDataToADaCGHData(), silent = TRUE)
+tableChromArray <- collect()[[1]]
+if(inherits(tableChromArray, "try-error")) {
+  ## FIXME
+  ## lanzar todo el parar el conjunto y quit
+}
+
+
 #####################################################################
 #####################################################################
 options(warn = -1)

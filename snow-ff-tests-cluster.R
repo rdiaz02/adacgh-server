@@ -31,6 +31,9 @@ library(ff)
 ## rm(list = ls())
 
 
+
+
+
 library(snowfall)
 sfInit(parallel = TRUE, cpus = 10, type = "MPI")
 sfClusterEval(system("hostname", intern = TRUE)) ## double check
@@ -58,3 +61,20 @@ uu2 <- pSegmentGLAD("cghData2.RData", "chromData.RData")
 
 uu3 <- pSegmentHaarSeg("cghData2.RData", "chromData.RData")
 uu4 <- pSegmentDNAcopy("cghData2.RData", "chromData.RData")
+
+
+
+### testing existing methods
+
+inputDataToADaCGHData(filename = "~/bzr-local-repos/adacgh-server/test-cases/dnacopy-ok/inputData.RData")
+
+cbs <- pSegmentDNAcopy("cghData.RData", "chromData.RData")
+haar <- pSegmentHaarSeg("cghData.RData", "chromData.RData")
+glad <- pSegmentGLAD("cghData.RData", "chromData.RData")
+
+t1 <- inputDataToADaCGHData(filename = "~/bzr-local-repos/adacgh-server/test-cases/dnacopy-ok/inputData.RData")
+
+save(file = "cbs.RData", cbs)
+
+pChromPlot(t1, "cbs.RData", "cghData.RData", "chromData.RData", "probeNames.RData")
+## and note something neat: can use only a few by subsetting t1[1:5, ]
