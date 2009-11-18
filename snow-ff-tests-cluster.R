@@ -78,3 +78,67 @@ save(file = "cbs.RData", cbs)
 
 pChromPlot(t1, "cbs.RData", "cghData.RData", "chromData.RData", "probeNames.RData")
 ## and note something neat: can use only a few by subsetting t1[1:5, ]
+
+
+hmm1 <- pSegmentHMM("cghData.RData", "chromData.RData")
+biohmm <- pSegmentBioHMM("cghData.RData", "chromData.RData", "posData.RData")
+
+cgh1 <- pSegmentCGHseg("cghData.RData", "chromData.RData")
+cgh2 <- pSegmentCGHseg("cghData.RData", "chromData.RData", mergeSegs = TRUE)
+
+cgh3 <- pSegmentCGHseg("cghData.RData", "chromData.RData", CGHseg.thres = -0.15,
+                       mergeSegs = TRUE) ## this is the one like in Wavi
+
+wave1 <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE)
+
+wave2 <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
+                          minMergeDiff = 0.05, minDiff = 0.05)
+
+wave3 <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = FALSE,
+                          minMergeDiff = 0.05, minDiff = 0.25)
+
+wave4 <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
+                          minMergeDiff = 0.05, minDiff = 0.25)
+
+wave5 <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
+                          minMergeDiff = 0.05, minDiff = 0.25)
+
+
+
+### to check same results in same data
+inputDataToADaCGHData(filename = "inputData.RData.9.arrays")
+
+cbs.9 <- pSegmentDNAcopy("cghData.RData", "chromData.RData")
+haar.9 <- pSegmentHaarSeg("cghData.RData", "chromData.RData")
+glad.9 <- pSegmentGLAD("cghData.RData", "chromData.RData")
+
+## e.g., do:
+
+round(cor(glad.9[[2]][,]), 3)
+round(cor(glad.9[[1]][,]), 3)
+
+
+
+check.rr <- function(x) {
+  open(x[[1]])
+  open(x[[2]])
+  print(x[[1]])
+  cat("\n")
+  print(round(cor(x[[2]][,]), 3))
+  cat("\n")
+  print(round(cor(x[[1]][,]), 3))
+}
+  
+
+hmm.9 <- pSegmentHMM("cghData.RData", "chromData.RData")
+biohmm.9 <- pSegmentBioHMM("cghData.RData", "chromData.RData", "posData.RData")
+
+
+
+cghseg.9.m <- pSegmentCGHseg("cghData.RData", "chromData.RData", mergeSegs = TRUE)
+cghseg.9.F <- pSegmentCGHseg("cghData.RData", "chromData.RData", mergeSegs = FALSE)
+
+wave.T <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
+                          minMergeDiff = 0.05, minDiff = 0.25)
+wave.F <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = FALSE,
+                          minMergeDiff = 0.05, minDiff = 0.25)
