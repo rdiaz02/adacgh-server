@@ -15,23 +15,9 @@
 #### Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
 #### USA.
 
-
-#### FIXME: start MPI only when needed.
-#### Launch only the minimally needed number of nodes.
-#### Minimize sending? Grab data from directory?
-#### Clean up all code and delete unused methods.
-#### Use MPI only if justified (more than one or array)
-
-#### For easier debugging: we go saving results as things go along.
-
 ######################################################################
 ######################################################################
 ######################################################################
-
-
-## FIXME: probably ask Angel to do conversion at exit of his proc.
-## and checks, too. All of that is very time consuming.
-
 
 
 assign(".__ADaCGH_SERVER_APPL", TRUE)
@@ -41,16 +27,12 @@ assign(".__ADaCGH_SERVER_APPL", TRUE)
 if(! .__ADaCGH_SERVER_APPL) rm(list = ls())
 
 
-
-
-library(Hmisc, verbose = FALSE)
-library("waveslim", verbose = FALSE) ## we will have to load ADaCGH soon,
-## but we must mask certain defs. in waveslim. So load
-## waveslim here
 library(ADaCGH, verbose = FALSE)
 cat("\nADaCGH Version :")
 packageDescription("ADaCGH")$Version
 cat("\n\n")
+
+
 
 
 ##############################################
@@ -80,8 +62,6 @@ doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
     sink()
     return(num)
 }
-
-
 
 ### We will use hidden stuff from ADaCGH
 #doCheckpoint <- ADaCGH:::doCheckpoint
@@ -229,10 +209,19 @@ if (.__ADaCGH_SERVER_APPL) {
   checkpoint.num <- 0
 }
 
+
+#######################################################
+#######################################################
+#######################################################
+###
+###       Getting and checking options
+###
+#######################################################
+#######################################################
+#######################################################
+
+
   
-
-
-
 trythis <- try({WaviOptions <- readOptions("options.txt")})
 if(inherits(trythis, "try-error"))
   caughtUserError.Web(trythis)
@@ -265,12 +254,65 @@ if(is.null(WaviOptions$mergeRes)) WaviOptions$mergeRes <- 1
 
 
 
+#######################################################
+#######################################################
+#######################################################
+###
+###       Read data and initial stuff
+###
+#######################################################
+#######################################################
+#######################################################
+
+if(checkpoint.num < 1) {
+  
+  ## With ff and new functions. Reading data, etc, is done in a child process
+  ## that does only that. That way, main process does not use a lot of RAM
+  ## Verify we are doing OK killing the child, or whatever. I think we are.
+  library(multicore)
+  parallel(inputDataToADaCGHData(), silent = TRUE)
+  tableChromArray <- collect()[[1]]
+  if(inherits(tableChromArray, "try-error")) {
+    ## FIXME
+    ## lanzar todo el parar el conjunto y quit
+    ## simplemente verificar que se han escrito los ficheros apropiados
+    ## y parar
+  }
+
+  numarrays <- max(tableChromArray$ArrayNum)
+  chromnum <- max(tableChromArray$Chrom)
+
+  cat("\n gc right before checkpoint 1 \n")
+  print(gc())
+
+  to.save <- c("numarrays", "chromnum", 
+               "WaviOptions", ".__ADaCGH_SERVER_APPL",
+               "doCheckpoint", "NormalTermination",
+               "caughtUserError.Web", "caughtOurError.Web",
+               "custom.out1")
+  checkpoint.num <- doCheckpoint(1, to.save)
+  
+  cat("\n gc right after checkpoint 1 \n")
+  gc()
+}
+
+
+  
+
+
+}
+
+
+
+
+
+
+
 
 #################################################################
 ## MPI, LAM, etc.
 ## enter info into lam suffix log table
 
-library(Rmpi)
 
 if (.__ADaCGH_SERVER_APPL) {
   trylam <- try(
@@ -288,111 +330,11 @@ if (.__ADaCGH_SERVER_APPL) {
                        sep = "")
   
   system(sed.command)
-  
   cat("\n\n Did sed.command ")
   cat(sed.command)
 }
 
 
-
-#######################################################
-#######################################################
-#######################################################
-###
-###       Read data and initial stuff
-###
-#######################################################
-#######################################################
-#######################################################
-
-if(checkpoint.num < 1) {
-  load("inputData.RData")
-  
-  if(!is.numeric(inputData$chromosome))
-    caughtUserError.Web("Chromosome contains non-numeric data.\n That is not allowed.\n")
-  
-  
-  if(any(is.na(inputData))) {
-    caughtUserError.Web("Your aCGH file contains missing values. \n That is not allowed.\n")
-  }
-
-  common.data <- data.frame(ID = inputData$ID,
-                            Chromosome = inputData$chromosome, ##numeric
-                            MidPoint = inputData$position)
-
-
-
-  ### replace xcenter by inputData
-  xcenter <- inputData[, -c(1, 2, 3), drop = FALSE]
-  
-  if(any(!(apply(xcenter, 2, is.numeric))))  {
-        caughtUserError.Web("Your aCGH file contains non-numeric data. \n That is not allowed.\n")
-    }
-    
-    cat("\n gc after reading xcenter \n")
-    gc()
-
-
-    ## Do we have any identical MidPos in the same chromosome??  Just to solve
-    ## it quickly and without nasty downstream consequences, we add a runif to
-    ## midPos. But NO further averaging.
-
-
-    
-    tmp <- paste(common.data$Chromosome, common.data$MidPoint, sep = ".")
-    tmp <- factor(tmp, levels = unique(tmp), labels = unique(tmp))
-    if (sum(duplicated(tmp))) {
-        ## add a random variate, to break ties:
-        common.data$MidPoint[duplicated(tmp)] <-
-            common.data$MidPoint[duplicated(tmp)] +
-                runif(sum(duplicated(tmp)))
-        
-        ## Reorder, just in case
-        reorder <- order(common.data$Chromosome,
-                         common.data$MidPoint,
-                         common.data$ID)
-        common.data <- common.data[reorder, ]
-        xcenter <- xcenter[reorder, , drop = FALSE]
-    }
-
-    arrayNames <- colnames(xcenter)
-    tmp <- paste(common.data$Chromosome, common.data$MidPoint, sep = ".")
-    if (sum(duplicated(tmp)))
-        caughtOurError.Web("still duplicated MidPoints; shouldn't happen")
-  
-  numarrays <- ncol(xcenter)
-  chromnum <- length(unique(common.data$Chromosome))
-  
-  if(any(table(common.data$Chromosome) < 10))
-    caughtUserError.Web("At least one of your chromosomes has less than 10 observations.\n That is not allowed.\n")
-  
-
-  cat("\n gc right before checkpoint 1 \n")
-  print(gc())
-
-  to.save <- c("numarrays", "xcenter", "chromnum", "common.data",
-               "arrayNames",
-               "WaviOptions", ".__ADaCGH_SERVER_APPL",
-               "doCheckpoint", "NormalTermination",
-               "caughtUserError.Web", "caughtOurError.Web",
-               "custom.out1")
-  checkpoint.num <- doCheckpoint(1, to.save)
-  
-  cat("\n gc right after checkpoint 1 \n")
-  gc()
-}
-
-
-### With ff and new functions. Reading data, etc, is done in a child process
-### that does only that. That way, main process does not use a lot of RAM
-### Verify we are doing OK killing the child, or whatever. I think we are.
-library(multicore)
-parallel(inputDataToADaCGHData(), silent = TRUE)
-tableChromArray <- collect()[[1]]
-if(inherits(tableChromArray, "try-error")) {
-  ## FIXME
-  ## lanzar todo el parar el conjunto y quit
-}
 
 
 #####################################################################

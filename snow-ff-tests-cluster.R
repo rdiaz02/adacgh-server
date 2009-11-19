@@ -1,4 +1,5 @@
 setwd("/http/tmp/kaka")
+
 library(ff)
 
 ## load("/http/adacgh-server/test-cases/dnacopy-ok/inputData.RData")
@@ -38,6 +39,7 @@ library(snowfall)
 sfInit(parallel = TRUE, cpus = 10, type = "MPI")
 sfClusterEval(system("hostname", intern = TRUE)) ## double check
 
+sfLibrary(waveslim)
 sfLibrary(ff)
 sfLibrary(GLAD)
 sfLibrary(snapCGH)
