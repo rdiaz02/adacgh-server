@@ -20,17 +20,25 @@
 ######################################################################
 
 
-assign(".__ADaCGH_SERVER_APPL", TRUE)
+
+### FIXME!!! remove below
+rm(list = ls())
+library(ff)
+library(ADaCGH, verbose = FALSE)
+source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
+### FIXME!!! change to TRUE
+assign(".__ADaCGH_SERVER_APPL", FALSE)
 
 ### For testing this script, set the above to false
 
-if(! .__ADaCGH_SERVER_APPL) rm(list = ls())
+## if(! .__ADaCGH_SERVER_APPL) rm(list = ls())
 
 
 library(ADaCGH, verbose = FALSE)
 cat("\nADaCGH Version :")
 packageDescription("ADaCGH")$Version
 cat("\n\n")
+
 
 
 
@@ -69,7 +77,8 @@ caughtUserError.Web <- ADaCGH:::caughtUserError.Web
 caughtOurError.Web <- ADaCGH:::caughtOurError.Web
 
 NormalTermination <- function(){
-    ADaCGH:::mpi.clean.quit.Web()
+##    ADaCGH:::mpi.clean.quit.Web()
+    ADaCGH:::snowfall.clean.quit.Web()
     status <- file("R_Status.txt", "w")
     cat("Normal termination\n", file = status)
     flush(status)
@@ -95,20 +104,6 @@ checkAssign <- function(value, rangeOK, lista) {
     else
         caughtUserError.Web(paste(value, "has a value we do not accept"))
 }
-    
-
-acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
-                     'entrez', 'ug', 'rsrna', 'rspeptide', 'hugo')
-acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
-acceptedMethodaCGH <- c ('Wavelets', 'DNAcopy', 'GLAD', 'HMM', 'BioHMM',
-                      'CGHseg', 'HaarSeg')
-methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
-                      'CGHseg'   = c('CGHseg.s'),
-                      'HaarSeg'  = c('HaarSeg.m')
-                      )
-acceptedColors <- colors()
-
-
 
 checkConvertMethodOptions <- function(method.options, options) {
   methodaCGH <- options[["method"]]
@@ -127,40 +122,51 @@ checkConvertMethodOptions <- function(method.options, options) {
 }
 
 
+acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
+                     'entrez', 'ug', 'rsrna', 'rspeptide', 'hugo')
+acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
+acceptedMethodaCGH <- c ('Wavelets', 'DNAcopy', 'GLAD', 'HMM', 'BioHMM',
+                      'CGHseg', 'HaarSeg')
+methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
+                      'CGHseg'   = c('CGHseg.s'),
+                      'HaarSeg'  = c('HaarSeg.m')
+                      )
+acceptedColors <- colors()
 
-  custom.out1 <- function(custom.common = custom.common,
-                          segmres = segmres,
-                          arrayNames = arrayNames) {
-    
-    partC <- partB <- partA <- matrix(-9999,
-                                      nrow = nrow(custom.common),
-                                      ncol = length(arrayNames))
-    partA <- sapply(segmres[[1]], function(x) x[, 1])
-    partB <- sapply(segmres[[1]], function(x) x[, 2])
-    partC <- sapply(segmres[[1]], function(x) x[, 3])
-    colnames(partA) <- colnames(partB) <- colnames(partC) <-arrayNames
-    observed.out <- cbind(custom.common, partA)
-    rm(partA)
-    for(i in 1:3) gc()
-    segmented.out <- cbind(custom.common, partB)
-    for(i in 1:3) rm(partB)
-    calls.out <- cbind(custom.common, partC)
-    for(i in 1:3) rm(partC)
-    
-    save(file = "observed.out.RData", observed.out)
-    save(file = "segmented.out.RData", segmented.out)
-    save(file = "calls.out.RData", calls.out)
-    
-    write.table(file = "segmented.out.txt",
-                segmented.out, sep = "\t",
-                quote = FALSE, row.names = FALSE,
-                col.names = TRUE)
-    write.table(file = "calls.out.txt",
-                calls.out, sep = "\t",
-                quote = FALSE, row.names = FALSE,
-                col.names = TRUE)
-    system("chmod 777 calls.out.txt")
-  }
+
+## custom.out1 <- function(custom.common = custom.common,
+##                         segmres = segmres,
+##                         arrayNames = arrayNames) {
+  
+##   partC <- partB <- partA <- matrix(-9999,
+##                                     nrow = nrow(custom.common),
+##                                     ncol = length(arrayNames))
+##   partA <- sapply(segmres[[1]], function(x) x[, 1])
+##   partB <- sapply(segmres[[1]], function(x) x[, 2])
+##   partC <- sapply(segmres[[1]], function(x) x[, 3])
+##   colnames(partA) <- colnames(partB) <- colnames(partC) <-arrayNames
+##   observed.out <- cbind(custom.common, partA)
+##   rm(partA)
+##   for(i in 1:3) gc()
+##   segmented.out <- cbind(custom.common, partB)
+##   for(i in 1:3) rm(partB)
+##   calls.out <- cbind(custom.common, partC)
+##   for(i in 1:3) rm(partC)
+  
+##   save(file = "observed.out.RData", observed.out)
+##   save(file = "segmented.out.RData", segmented.out)
+##   save(file = "calls.out.RData", calls.out)
+  
+##   write.table(file = "segmented.out.txt",
+##               segmented.out, sep = "\t",
+##               quote = FALSE, row.names = FALSE,
+##               col.names = TRUE)
+##   write.table(file = "calls.out.txt",
+##               calls.out, sep = "\t",
+##               quote = FALSE, row.names = FALSE,
+##               col.names = TRUE)
+##   system("chmod 777 calls.out.txt")
+## }
 
 
     
@@ -245,12 +251,18 @@ WaviOptions <- checkConvertMethodOptions(methodOptions, WaviOptions)
 ## defaults for DNA copy and other defaults or options that will get overwritten
 ## if needed
 
-WaviOptions$DNA.undo.splits <- "prune" ## don't touch this
-WaviOptions$png.width <- 400
-WaviOptions$png.height <- 400
-WaviOptions$png.pointsize <- 10
-if(is.null(WaviOptions$mergeRes)) WaviOptions$mergeRes <- 1
+## WaviOptions$DNA.undo.splits <- "prune" ## don't touch this
+## WaviOptions$png.width <- 400
+## WaviOptions$png.height <- 400
+## WaviOptions$png.pointsize <- 10
 
+## we do not want to mess around with options anymore
+if(is.null(WaviOptions$mergeRes)) {
+  if(WaviOptions$method == "DNAcopy")
+    WaviOptions$mergeRes <- TRUE
+  if(WaviOptions$method == "CGHseg")
+    WaviOptions$mergeRes <- FALSE
+}
 
 
 
@@ -273,10 +285,7 @@ if(checkpoint.num < 1) {
   parallel(inputDataToADaCGHData(), silent = TRUE)
   tableChromArray <- collect()[[1]]
   if(inherits(tableChromArray, "try-error")) {
-    ## FIXME
-    ## lanzar todo el parar el conjunto y quit
-    ## simplemente verificar que se han escrito los ficheros apropiados
-    ## y parar
+    caughtOurError.Web("ERROR in input data conversion")
   }
 
   numarrays <- max(tableChromArray$ArrayNum)
@@ -285,28 +294,16 @@ if(checkpoint.num < 1) {
   cat("\n gc right before checkpoint 1 \n")
   print(gc())
 
-  to.save <- c("numarrays", "chromnum", 
+  to.save <- c("numarrays", "chromnum",
+               "tableChromArray",
                "WaviOptions", ".__ADaCGH_SERVER_APPL",
                "doCheckpoint", "NormalTermination",
-               "caughtUserError.Web", "caughtOurError.Web",
-               "custom.out1")
+               "caughtUserError.Web", "caughtOurError.Web")
   checkpoint.num <- doCheckpoint(1, to.save)
   
   cat("\n gc right after checkpoint 1 \n")
   gc()
 }
-
-
-  
-
-
-}
-
-
-
-
-
-
 
 
 #################################################################
@@ -335,103 +332,107 @@ if (.__ADaCGH_SERVER_APPL) {
 }
 
 
+#######################################################
+#######################################################
+#######################################################
+###
+###       MPI and snowfall: launch
+###
+#######################################################
+#######################################################
+#######################################################
 
-
-#####################################################################
-#####################################################################
 options(warn = -1)
 
 ### Launch Rmpi as late as possible with only the minimum possible slaves
 
+library(Rmpi)
 
 print(system("lamnodes"))
-
 print(paste("Universe size is ", mpi.universe.size()))
 
-##try({
 usize <- min(numarrays * chromnum, mpi.universe.size())
 ## make sure at least two, o.w. rsprng won't work, and
 ## we do not want to hack my mpiInit.
 print(paste("usize is", usize))
 
-
 if (.__ADaCGH_SERVER_APPL) {
   usize <- max(2, usize)
-  mpiInit(universeSize = usize, exit_on_fail = TRUE)
+  snowfallInit(universeSize = usize, exit_on_fail = TRUE)
   print("after mpiInit")
   cat("\n\nAbout to print mpiOK file\n")
   sink(file = "mpiOK")
   cat("MPI started OK\n")
   sink()
 } else {
-  mpiInit(universeSize = mpi.universe.size(), exit_on_fail = FALSE)
+  snowfallInit(universeSize = mpi.universe.size(), exit_on_fail = FALSE)
 }
 
 
+#######################################################
+#######################################################
+#######################################################
+###
+###       Segmentation
+###
+#######################################################
+#######################################################
+#######################################################
+
 
 if(checkpoint.num < 3) {
-  
-  ymax <- max(as.matrix(xcenter))
-  ymin <- min(as.matrix(xcenter))
 
   trythis <- try({
     fseg <- get(paste("pSegment", WaviOptions$method, sep = ""))
-    segmres <- fseg(as.matrix(xcenter),
-                    chrom.numeric = common.data$Chromosome,
-                    Pos = common.data$MidPoint,
+    segmres <- fseg(cghRDataName = "cghData.RData",
+                    chromRDataName = "chromData.RData",
+                    posRDataName = "posData.RData",
                     mergeSegs = WaviOptions$mergeRes,
-                    minDiff = force(WaviOptions$Wave.minDiff),
-                    CGHseg.thres = force(WaviOptions$CGHseg.s),
-                    HaarSeg.m = force(WaviOptions$HaarSeg.m))
+                    minDiff = WaviOptions$Wave.minDiff,
+                    CGHseg.thres = WaviOptions$CGHseg.s,
+                    HaarSeg.m = WaviOptions$HaarSeg.m)
   })
   
   if(inherits(trythis, "try-error"))
     caughtOurError.Web(trythis)
   cat("\n\n Segmentation done \n\n")
   save(segmres, file = "segmres.RData")
-  adacgh.server.output <- segmres[[1]]
-  save(adacgh.server.output, file = "adacgh.server.output.RData")
-  
-  custom.common <- data.frame(ProbeName = common.data$ID,
-                              Chr = common.data$Chromosome,
-                              Position = common.data$MidPoint)
 
+  ## FIXME 
+  ## adacgh.server.output <- segmres[[1]]
+  ## save(adacgh.server.output, file = "adacgh.server.output.RData")
   
-  
-  custom.out1(custom.common, segmres, arrayNames)
-  
-  rm(adacgh.server.output)
-
   cat("\n gc right before checkpoint 3 \n")
   print(gc())
-  
-  to.save <- c("ymax", "ymin", "segmres",
-               "arrayNames",
-               "numarrays", "xcenter", "chromnum", "common.data",
+
+  to.save <- c("numarrays", "chromnum",
+               "tableChromArray",
                "WaviOptions", ".__ADaCGH_SERVER_APPL",
                "doCheckpoint", "NormalTermination",
                "caughtUserError.Web", "caughtOurError.Web")
-
+  
   checkpoint.num <- doCheckpoint(3, to.save)
-  cat("\n gc right after checkpoint 3 \n")
+   cat("\n gc right after checkpoint 3 \n")
   print(gc())
 }
 
 
 if(checkpoint.num < 5) {
+  ### FIXME!!! quitar!!!
+  source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
+sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R"))
   trythis <- try(
-                 segmentPlot(segmres, geneNames = common.data$ID,
-                             chrom.numeric = common.data$Chromosome,
-                             yminmax = c(ymin, ymax),
-                             idtype = WaviOptions$idtype,
-                             organism = WaviOptions$organism,
-                             colors = WaviOptions$colorsWavi,
-                             html_js = FALSE,
-                             superimp = FALSE,
-                             imgheight = 350))
+                 pChromPlot(outRDataName = "segmres.RData",
+                            cghRDataName = "cghData.RData",
+                            chromRDataName = "chromData.RData",
+                            posRDataName = "posData.RData",
+                            probenamesRDataName = "probeNames.RData",
+                            colors = WaviOptions$colorsWavi,
+                            imgheight = 350)
+                 )
   if(inherits(trythis, "try-error"))
     caughtOurError.Web(trythis)
-  cat("\n\n Plotting done \n\n")
+  cat("\n\n Color plotting done \n\n")
   cat("\n gc right after plotting \n")
   print(gc())
 
@@ -442,20 +443,17 @@ if(checkpoint.num < 5) {
   dir.create("BW")
   setwd("BW")
   print(getwd())
-  mpi.remote.exec(setwd("BW"))
+  sfClusterEval(setwd("BW"))
+##  mpi.remote.exec(setwd("BW"))
   trythis <- try(
-                 segmentPlot(segmres, geneNames = common.data$ID,
-                             chrom.numeric = common.data$Chromosome,
-                             cghdata = NULL,
-                             arraynames = arrayNames,
-                             yminmax = c(ymin, ymax),
-                             idtype = WaviOptions$idtype,
-                             organism = WaviOptions$organism,
-                             numarrays = numarrays,
-                             colors = c(rep("black", 3), "blue"),
-                             html_js = FALSE,
-                             superimp = FALSE,
-                             imgheight = 350))
+                 pChromPlot(outRDataName = "segmres.RData",
+                            cghRDataName = "cghData.RData",
+                            chromRDataName = "chromData.RData",
+                            posRDataName = "posData.RData",
+                            probenamesRDataName = "probeNames.RData",
+                            colors = c(rep("black", 3), "blue"),
+                            imgheight = 350)
+                 )
   if(inherits(trythis, "try-error"))
     caughtOurError.Web(trythis)
   files.in.BW <- dir()
@@ -464,12 +462,16 @@ if(checkpoint.num < 5) {
   ##         system('mmv "*" "BW_#1"')
   ##         system('cp * ../.')
   setwd(dir1)
-  mpi.remote.exec(setwd(dir1))
+  sfExport("dir1")
+  sfClusterEval(setwd(dir1))
+##  mpi.remote.exec(setwd(dir1))
   
-  cat("\n\n Plotting done \n\n")
+  cat("\n\n BW plotting done \n\n")
   cat("\n gc right after plotting \n")
   print(gc())
-
   NormalTermination()
 }
+
+
+
 

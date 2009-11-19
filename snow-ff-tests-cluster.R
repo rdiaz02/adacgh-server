@@ -144,3 +144,39 @@ wave.T <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
                           minMergeDiff = 0.05, minDiff = 0.25)
 wave.F <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = FALSE,
                           minMergeDiff = 0.05, minDiff = 0.25)
+## the bug is in the old wavelets code then.
+
+
+
+
+#####################################################
+
+#### Testing code AND f2.R
+
+my.f.ff <- function(ffpattern = paste(getwd(), "aa", sep = "/")) {
+  vv <- ff(1:5, vmode = "ubyte",
+           pattern= ffpattern)
+  save(file = "vv.RData", vv)
+  gc()
+}
+
+
+
+my.f.ff <- function(ffpattern = paste(getwd(), "aa", sep = "/")) {
+  vv <- ff(1:5, vmode = "ubyte",
+           pattern= ffpattern)
+  save(file = "vv.RData", vv)
+  print(gc())
+}
+
+## it is the call to "print(gc())" as a single gc() will not cause problems
+## and it is using "silent". No problem if using fork from library fork.
+
+
+
+parallel(my.f.ff()); collect(); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
+
+
+parallel(my.f.ff(), silent = TRUE); collect(); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
+
+pid <- fork(my.f.ff); wait(pid); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
