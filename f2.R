@@ -20,6 +20,8 @@
 ######################################################################
 
 
+### Outut en formato para Dani
+### FIXME: qué pasa con un solo array o un solo chrom???
 
 ### FIXME!!! remove below
 rm(list = ls())
@@ -35,7 +37,7 @@ assign(".__ADaCGH_SERVER_APPL", FALSE)
 
 
 library(ADaCGH, verbose = FALSE)
-cat("\nADaCGH Version :")
+cat("\nADaCGH Version :\n")
 packageDescription("ADaCGH")$Version
 cat("\n\n")
 
@@ -73,8 +75,11 @@ doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
 
 ### We will use hidden stuff from ADaCGH
 #doCheckpoint <- ADaCGH:::doCheckpoint
-caughtUserError.Web <- ADaCGH:::caughtUserError.Web
-caughtOurError.Web <- ADaCGH:::caughtOurError.Web
+
+
+## FIXME!!! uncomment the two below
+# caughtUserError.Web <- ADaCGH:::caughtUserError.Web
+# caughtOurError.Web <- ADaCGH:::caughtOurError.Web
 
 NormalTermination <- function(){
 ##    ADaCGH:::mpi.clean.quit.Web()
@@ -266,6 +271,11 @@ if(is.null(WaviOptions$mergeRes)) {
 
 
 
+cat("\n\n All WaviOptions are: \n")
+
+WaviOptions
+
+
 #######################################################
 #######################################################
 #######################################################
@@ -282,7 +292,7 @@ if(checkpoint.num < 1) {
   ## that does only that. That way, main process does not use a lot of RAM
   ## Verify we are doing OK killing the child, or whatever. I think we are.
   library(multicore)
-  parallel(inputDataToADaCGHData(), silent = TRUE)
+  parallel(inputDataToADaCGHData(), silent = FALSE)
   tableChromArray <- collect()[[1]]
   if(inherits(tableChromArray, "try-error")) {
     caughtOurError.Web("ERROR in input data conversion")
@@ -305,6 +315,8 @@ if(checkpoint.num < 1) {
   gc()
 }
 
+## FIXME!!!
+source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
 
 #################################################################
 ## MPI, LAM, etc.
@@ -446,11 +458,11 @@ sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/AD
   sfClusterEval(setwd("BW"))
 ##  mpi.remote.exec(setwd("BW"))
   trythis <- try(
-                 pChromPlot(outRDataName = "segmres.RData",
-                            cghRDataName = "cghData.RData",
-                            chromRDataName = "chromData.RData",
-                            posRDataName = "posData.RData",
-                            probenamesRDataName = "probeNames.RData",
+                 pChromPlot(outRDataName = "../segmres.RData",
+                            cghRDataName = "../cghData.RData",
+                            chromRDataName = "../chromData.RData",
+                            posRDataName = "../posData.RData",
+                            probenamesRDataName = "../probeNames.RData",
                             colors = c(rep("black", 3), "blue"),
                             imgheight = 350)
                  )
@@ -458,7 +470,7 @@ sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/AD
     caughtOurError.Web(trythis)
   files.in.BW <- dir()
   for (ffbw in files.in.BW) file.rename(ffbw, paste("BW_", ffbw, sep = ""))
-  file.copy(from = dir(), to = dir1)
+  null <- file.copy(from = dir(), to = dir1)
   ##         system('mmv "*" "BW_#1"')
   ##         system('cp * ../.')
   setwd(dir1)
