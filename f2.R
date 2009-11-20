@@ -23,22 +23,13 @@
 ### Outut en formato para Dani
 ### FIXME: qué pasa con un solo array o un solo chrom???
 
-### FIXME!!! remove below
-rm(list = ls())
-library(ff)
-library(ADaCGH, verbose = FALSE)
-source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
 ### FIXME!!! change to TRUE
 assign(".__ADaCGH_SERVER_APPL", FALSE)
 
-### For testing this script, set the above to false
 
-## if(! .__ADaCGH_SERVER_APPL) rm(list = ls())
-
-
-library(ADaCGH, verbose = FALSE)
-cat("\nADaCGH Version :\n")
-packageDescription("ADaCGH")$Version
+library(ADaCGH2, verbose = FALSE)
+cat("\nADaCGH2 Version :\n")
+packageDescription("ADaCGH2")$Version
 cat("\n\n")
 
 
@@ -77,13 +68,11 @@ doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
 #doCheckpoint <- ADaCGH:::doCheckpoint
 
 
-## FIXME!!! uncomment the two below
-# caughtUserError.Web <- ADaCGH:::caughtUserError.Web
-# caughtOurError.Web <- ADaCGH:::caughtOurError.Web
+caughtUserError.Web <- ADaCGH2:::caughtUserError.Web
+caughtOurError.Web <- ADaCGH2:::caughtOurError.Web
 
 NormalTermination <- function(){
-##    ADaCGH:::mpi.clean.quit.Web()
-    ADaCGH:::snowfall.clean.quit.Web()
+    ADaCGH2:::snowfall.clean.quit.Web()
     status <- file("R_Status.txt", "w")
     cat("Normal termination\n", file = status)
     flush(status)
@@ -315,10 +304,7 @@ if(checkpoint.num < 1) {
   gc()
 }
 
-## FIXME!!!
-source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
-
-#################################################################
+################################################################
 ## MPI, LAM, etc.
 ## enter info into lam suffix log table
 
@@ -430,9 +416,6 @@ if(checkpoint.num < 3) {
 
 
 if(checkpoint.num < 5) {
-  ### FIXME!!! quitar!!!
-  source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R")
-sfClusterEval(source("/home/ramon/bzr-local-repos/adacgh2/R-packages/ADaCGH/R/ADaCGH-2.R"))
   trythis <- try(
                  pChromPlot(outRDataName = "segmres.RData",
                             cghRDataName = "cghData.RData",
