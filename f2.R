@@ -166,6 +166,69 @@ acceptedColors <- colors()
     
 
 
+new.custom <- function(segmresRDataName,
+                       cghRDataName,
+                       chromRDataName,
+                       posRDataName) {
+  
+
+
+
+  close(get(nameChrom)) 
+
+  
+  narrays <- ncol(segmres[[1]])
+  seqi <- seq.int(1, narrays)
+  
+  list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
+                 Chr = chromData,
+                 Position = posData)
+
+  l.smoothed <- lapply(seqi,
+                       function(i) segmres[[1]][[i]])
+  l.calls <- lapply(seqi,
+                    function(i) segmres[[2]][[i]])
+  l.original <- lapply(seqi,
+                       function(i) cghData[[i]])
+
+  names(l.smoothed) <- names(l.calls) <- names(l.original) <-
+    names(segmres[[1]])
+
+  l.smoothed <- c(list.1, l.smoothed)
+  l.calls <- c(list.1, l.calls)
+  l.original <- c(list.1, l.original)
+
+  smoothedffdf <- do.call("ffdf", l.smoothed)
+  callsffdf <- do.call("ffdf", l.calls)
+  originalffdf <- do.call("ffdf", l.original)
+  
+  write.table.ffdf(smoothedffdf, file = "segmented.out.txt",
+                   sep = "\t", quote = FALSE)
+  write.table.ffdf(callsffdf, file = "calls.out.txt",
+                   sep = "\t", quote = FALSE)
+
+  tablePos <- wrapCreateTableArrChr(cghRDataName, chromRDataName)
+
+  
+  rle.chr <- intrle(as.integer(chromData[]))
+  chr.end <- cumsum(rle.chr$lengths)
+  chr.start <- c(1, chr.end[-length(chr.end)] + 1)
+  chromPos <- cbind(chr.start, chr.end)
+  lcpos <- nrow(chromPos)
+
+  f1 <- function(i, namein, nameout) {
+    namein[ri(1, 10), ] ## un data frame ya
+    df1 <- as.data.frame(original
+    oname <- paste("observed.out.", i, sep = "")
+    assign(oname, df1)
+    save(file = paste(oname, ".RData", sep = ""),
+         get(oname))
+    
+  
+}
+
+
+
 ##############################################
 ##############################################
 ######                              ##########
