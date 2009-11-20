@@ -166,17 +166,36 @@ my.f.ff <- function(ffpattern = paste(getwd(), "aa", sep = "/")) {
   vv <- ff(1:5, vmode = "ubyte",
            pattern= ffpattern)
   save(file = "vv.RData", vv)
-  print(gc())
+  print(2 * 2)
 }
+
+
+my.f2 <- function(ffpattern = paste(getwd(), "aa", sep = "/")) {
+  vv <- 1:5
+  save(file = "vv.RData", vv)
+  print(2 * 2)
+}
+
+
+
 
 ## it is the call to "print(gc())" as a single gc() will not cause problems
 ## and it is using "silent". No problem if using fork from library fork.
 
 
 
-parallel(my.f.ff()); collect(); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
-
-
+library(multicore)
+## Problems
 parallel(my.f.ff(), silent = TRUE); collect(); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
 
+## OK
+parallel(my.f.ff(), silent = FALSE); collect(); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
+
+## OK
+parallel(my.f2(), silent = TRUE); collect(); load("vv.RData"); vv; rm(vv)
+
+
+library(fork)
 pid <- fork(my.f.ff); wait(pid); load("vv.RData"); open(vv); filename(vv); vv; rm(vv)
+
+## and if I use force, or sleep?
