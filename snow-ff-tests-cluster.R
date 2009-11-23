@@ -138,7 +138,15 @@ biohmm.9 <- pSegmentBioHMM("cghData.RData", "chromData.RData", "posData.RData")
 
 
 cghseg.9.m <- pSegmentCGHseg("cghData.RData", "chromData.RData", mergeSegs = TRUE)
+
+
 cghseg.9.F <- pSegmentCGHseg("cghData.RData", "chromData.RData", mergeSegs = FALSE)
+
+cghseg.9.mad <- pSegmentCGHseg("cghData.RData", "chromData.RData", merge = "MAD")
+cghseg.9.ml <- pSegmentCGHseg("cghData.RData", "chromData.RData", merge = "mergeLevels")
+cghseg.9.none <- pSegmentCGHseg("cghData.RData", "chromData.RData", merge = "none")
+
+
 
 wave.T <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
                           minMergeDiff = 0.05, minDiff = 0.25)
