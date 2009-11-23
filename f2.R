@@ -166,16 +166,18 @@ acceptedColors <- colors()
     
 
 
-new.custom <- function(segmresRDataName,
-                       cghRDataName,
-                       chromRDataName,
-                       posRDataName) {
-  
+new.custom <- function(segmresRDataName = "segmres.RData",
+                       cghRDataName = "cghData.RData",
+                       chromRDataName = "chromData.RData",
+                       posRDataName = "posData.RData",
+                       probeNamesRDataName = "probeNames.RData") {
+  load(posRDataName)
+  load(chromRDataName)
+  load(cghRDataName)
+  load(segmresRDataName)
+  load(probeNamesRDataName)
 
-
-
-  close(get(nameChrom)) 
-
+##  nodeWhere("new.cutom 1")
   
   narrays <- ncol(segmres[[1]])
   seqi <- seq.int(1, narrays)
@@ -183,7 +185,10 @@ new.custom <- function(segmresRDataName,
   list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
                  Chr = chromData,
                  Position = posData)
-
+  ## close(list.1[[1]]) ## Don't close; must be open for
+  ## later writing
+  rm(probeNames)
+  gc()
   l.smoothed <- lapply(seqi,
                        function(i) segmres[[1]][[i]])
   l.calls <- lapply(seqi,
@@ -198,34 +203,40 @@ new.custom <- function(segmresRDataName,
   l.calls <- c(list.1, l.calls)
   l.original <- c(list.1, l.original)
 
-  smoothedffdf <- do.call("ffdf", l.smoothed)
+  segmentedffdf <- do.call("ffdf", l.smoothed)
   callsffdf <- do.call("ffdf", l.calls)
   originalffdf <- do.call("ffdf", l.original)
+
+  open(segmentedffdf)
+  open(callsffdf)
+  open(originalffdf)
   
-  write.table.ffdf(smoothedffdf, file = "segmented.out.txt",
+  write.table.ffdf(segmentedffdf, file = "segmented.out.txt",
                    sep = "\t", quote = FALSE)
   write.table.ffdf(callsffdf, file = "calls.out.txt",
                    sep = "\t", quote = FALSE)
 
-  tablePos <- wrapCreateTableArrChr(cghRDataName, chromRDataName)
-
-  
   rle.chr <- intrle(as.integer(chromData[]))
   chr.end <- cumsum(rle.chr$lengths)
   chr.start <- c(1, chr.end[-length(chr.end)] + 1)
-  chromPos <- cbind(chr.start, chr.end)
-  lcpos <- nrow(chromPos)
+  seqc <- seq.int(1, length(chr.start))
 
-  f1 <- function(i, namein, nameout) {
-    namein[ri(1, 10), ] ## un data frame ya
-    df1 <- as.data.frame(original
-    oname <- paste("observed.out.", i, sep = "")
-    assign(oname, df1)
+  f1 <- function(i,  objectin, nameout) {
+    oname <- paste(nameout, i, sep = "")
+    assign(oname,
+           objectin[ri(chr.start[i], chr.end[i]), ])
     save(file = paste(oname, ".RData", sep = ""),
-         get(oname))
-    
-  
+         list = c(oname))
+  }
+  null <- sapply(seqc, f1, segmentedffdf, "segmented.out")
+  null <- sapply(seqc, f1, callsffdf, "calls.out")
+
+  null <- close(segmentedffdf)
+  null <- close(callsffdf)
+  null <- close(originalffdf)
 }
+  
+
 
 
 
@@ -476,6 +487,9 @@ if(checkpoint.num < 3) {
    cat("\n gc right after checkpoint 3 \n")
   print(gc())
 }
+
+
+
 
 
 if(checkpoint.num < 5) {
