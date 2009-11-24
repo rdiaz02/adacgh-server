@@ -20,8 +20,14 @@
 ######################################################################
 
 
-### Outut en formato para Dani
 ### FIXME: qué pasa con un solo array o un solo chrom???
+### FIXME: poner opcinoes para merging como son las nuevas!!!
+### y permitir las tres posibls. para cghseg y wavelets.
+### FIXME: escribir el nuevo fichero runADaCGH...
+
+
+
+
 
 ### FIXME!!! change to TRUE
 assign(".__ADaCGH_SERVER_APPL", FALSE)
@@ -51,7 +57,8 @@ cat("\n\n")
 doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
 ##    checkpoint.num.new <- num
   if(!is.null(to.save)) {
-    save(file = ".RData", list = to.save, envir = .GlobalEnv)
+    save(file = ".RData", list = to.save, envir = .GlobalEnv,
+         compress = FALSE)
     if(delete.rest) {
       to.delete <- setdiff(ls(envir = .GlobalEnv), to.save)
       rm(list = to.delete, envir = .GlobalEnv)
@@ -128,44 +135,6 @@ methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
 acceptedColors <- colors()
 
 
-## custom.out1 <- function(custom.common = custom.common,
-##                         segmres = segmres,
-##                         arrayNames = arrayNames) {
-  
-##   partC <- partB <- partA <- matrix(-9999,
-##                                     nrow = nrow(custom.common),
-##                                     ncol = length(arrayNames))
-##   partA <- sapply(segmres[[1]], function(x) x[, 1])
-##   partB <- sapply(segmres[[1]], function(x) x[, 2])
-##   partC <- sapply(segmres[[1]], function(x) x[, 3])
-##   colnames(partA) <- colnames(partB) <- colnames(partC) <-arrayNames
-##   observed.out <- cbind(custom.common, partA)
-##   rm(partA)
-##   for(i in 1:3) gc()
-##   segmented.out <- cbind(custom.common, partB)
-##   for(i in 1:3) rm(partB)
-##   calls.out <- cbind(custom.common, partC)
-##   for(i in 1:3) rm(partC)
-  
-##   save(file = "observed.out.RData", observed.out)
-##   save(file = "segmented.out.RData", segmented.out)
-##   save(file = "calls.out.RData", calls.out)
-  
-##   write.table(file = "segmented.out.txt",
-##               segmented.out, sep = "\t",
-##               quote = FALSE, row.names = FALSE,
-##               col.names = TRUE)
-##   write.table(file = "calls.out.txt",
-##               calls.out, sep = "\t",
-##               quote = FALSE, row.names = FALSE,
-##               col.names = TRUE)
-##   system("chmod 777 calls.out.txt")
-## }
-
-
-    
-
-
 new.custom <- function(segmresRDataName = "segmres.RData",
                        cghRDataName = "cghData.RData",
                        chromRDataName = "chromData.RData",
@@ -226,14 +195,16 @@ new.custom <- function(segmresRDataName = "segmres.RData",
     assign(oname,
            objectin[ri(chr.start[i], chr.end[i]), ])
     save(file = paste(oname, ".RData", sep = ""),
-         list = c(oname))
+         list = c(oname), compress = FALSE)
   }
-  null <- sapply(seqc, f1, segmentedffdf, "segmented.out")
-  null <- sapply(seqc, f1, callsffdf, "calls.out")
-
+  null <- sapply(seqc, f1, segmentedffdf, "segmented.out.")
+  null <- sapply(seqc, f1, callsffdf, "calls.out.")
+  null <- sapply(seqc, f1, originalffdf, "original.")
+  
   null <- close(segmentedffdf)
   null <- close(callsffdf)
   null <- close(originalffdf)
+  return(0)
 }
   
 
@@ -367,7 +338,7 @@ if(checkpoint.num < 1) {
   cat("\n gc right before checkpoint 1 \n")
   print(gc())
 
-  to.save <- c("numarrays", "chromnum",
+  to.save <- c("numarrays", "chromnum", "new.custom",
                "tableChromArray",
                "WaviOptions", ".__ADaCGH_SERVER_APPL",
                "doCheckpoint", "NormalTermination",
@@ -468,7 +439,8 @@ if(checkpoint.num < 3) {
   if(inherits(trythis, "try-error"))
     caughtOurError.Web(trythis)
   cat("\n\n Segmentation done \n\n")
-  save(segmres, file = "segmres.RData")
+  save(segmres, file = "segmres.RData", compress = FALSE)
+
 
   ## FIXME 
   ## adacgh.server.output <- segmres[[1]]
@@ -478,7 +450,7 @@ if(checkpoint.num < 3) {
   print(gc())
 
   to.save <- c("numarrays", "chromnum",
-               "tableChromArray",
+               "tableChromArray", "new.custom",
                "WaviOptions", ".__ADaCGH_SERVER_APPL",
                "doCheckpoint", "NormalTermination",
                "caughtUserError.Web", "caughtOurError.Web")
@@ -486,6 +458,10 @@ if(checkpoint.num < 3) {
   checkpoint.num <- doCheckpoint(3, to.save)
    cat("\n gc right after checkpoint 3 \n")
   print(gc())
+
+
+
+  
 }
 
 
@@ -493,6 +469,15 @@ if(checkpoint.num < 3) {
 
 
 if(checkpoint.num < 5) {
+
+  ### We do the writing of files in another node, by forking.
+  ### This should be much faster than the remaining operations
+  ### and we do not load the master. Check at end.
+
+  library(multicore)
+  parallel(new.custom(), silent = FALSE)
+  
+  
   trythis <- try(
                  pChromPlot(outRDataName = "segmres.RData",
                             cghRDataName = "cghData.RData",
@@ -541,6 +526,13 @@ if(checkpoint.num < 5) {
   cat("\n\n BW plotting done \n\n")
   cat("\n gc right after plotting \n")
   print(gc())
+
+  ## check writing out worked
+  parall.writing <- collect()[[1]]
+  if(inherits(parall.writing, "try-error")) {
+    caughtOurError.Web("ERROR in data output")
+  }
+  
   NormalTermination()
 }
 

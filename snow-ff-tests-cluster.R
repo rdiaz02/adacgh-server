@@ -148,10 +148,19 @@ cghseg.9.none <- pSegmentCGHseg("cghData.RData", "chromData.RData", merge = "non
 
 
 
+
+wave.9.mad <- pSegmentWavelets("cghData.RData", "chromData.RData", merge = "MAD")
+wave.9.ml <- pSegmentWavelets("cghData.RData", "chromData.RData", merge = "mergeLevels")
+wave.9.none <- pSegmentWavelets("cghData.RData", "chromData.RData", merge = "none")
+
+
 wave.T <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = TRUE,
                           minMergeDiff = 0.05, minDiff = 0.25)
 wave.F <- pSegmentWavelets("cghData.RData", "chromData.RData", mergeSegs = FALSE,
                           minMergeDiff = 0.05, minDiff = 0.25)
+
+
+
 ## the bug is in the old wavelets code then.
 
 
