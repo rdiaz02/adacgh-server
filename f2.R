@@ -88,7 +88,6 @@ NormalTermination <- function(){
     quit(save = "no", status = 0, runLast = FALSE)
 }
 
-
 readOptions <- function(x) {
     ### return a list, because many more indexing options
     tmp <- read.table(x, sep = "\t", stringsAsFactors = FALSE)
@@ -284,24 +283,23 @@ WaviOptions$colorsWavi <- c(WaviOptions$colorNoChange, WaviOptions$colorGain,
                         WaviOptions$colorLoss, WaviOptions$colorSmooth,
                         "black")
 
+## this is not a good idea, but I leave so as not to have to change
+## the options files. But we do more processing of options below
 WaviOptions <- checkConvertMethodOptions(methodOptions, WaviOptions)    
-
-
-## defaults for DNA copy and other defaults or options that will get overwritten
-## if needed
-
-## WaviOptions$DNA.undo.splits <- "prune" ## don't touch this
-## WaviOptions$png.width <- 400
-## WaviOptions$png.height <- 400
-## WaviOptions$png.pointsize <- 10
 
 ## we do not want to mess around with options anymore
 if(is.null(WaviOptions$mergeRes)) {
   if(WaviOptions$method == "DNAcopy")
-    WaviOptions$mergeRes <- TRUE
+    WaviOptions$merge <- "mergeLevels"
   if(WaviOptions$method == "CGHseg")
-    WaviOptions$mergeRes <- FALSE
+    WaviOptions$merge <- "MAD"
+  if(WaviOptions$method == "Wavelets")
+    WaviOptions$merge <- "MAD"
 }
+if(WaviOptions$method == "HaarSeg")
+  WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
+
+
 
 
 
