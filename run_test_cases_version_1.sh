@@ -1,4 +1,11 @@
 #!/bin/bash
+
+#### BEWARE: if you compare output wth version 2,
+#### recall the "ok" fr wavelets and cghseg use
+#### mergelevels, whereas those for version 2
+#### use MAD. But for version 2 there are directories
+#### that run the mergelevels version!!!
+
 rm -f -r ./runs-tmp/tmp/dnacopy-ok
 rm -f -r ./runs-tmp/tmp/cghseg-ok
 rm -f -r ./runs-tmp/tmp/hmm-ok

@@ -1,0 +1,10 @@
+method	Wavelets
+idtype	None
+organism	None
+Wave.minDiff	0.25
+mergeRes	1
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
+merge		mergeLevels

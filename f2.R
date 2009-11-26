@@ -270,8 +270,8 @@ trythis <- try({WaviOptions <- readOptions("options.txt")})
 if(inherits(trythis, "try-error"))
   caughtUserError.Web(trythis)
 
-checkAssign("idtype", acceptedIDTypes, WaviOptions)
-checkAssign("organism", acceptedOrganisms, WaviOptions)
+## checkAssign("idtype", acceptedIDTypes, WaviOptions)
+## checkAssign("organism", acceptedOrganisms, WaviOptions)
 checkAssign("method", acceptedMethodaCGH, WaviOptions)
 checkAssign("colorNoChange", acceptedColors, WaviOptions)
 checkAssign("colorGain", acceptedColors, WaviOptions)
@@ -287,17 +287,39 @@ WaviOptions$colorsWavi <- c(WaviOptions$colorNoChange, WaviOptions$colorGain,
 ## the options files. But we do more processing of options below
 WaviOptions <- checkConvertMethodOptions(methodOptions, WaviOptions)    
 
+## merging options as mergeRes, etc, are ignored.
+
 ## we do not want to mess around with options anymore
-if(is.null(WaviOptions$mergeRes)) {
-  if(WaviOptions$method == "DNAcopy")
-    WaviOptions$merge <- "mergeLevels"
-  if(WaviOptions$method == "CGHseg")
-    WaviOptions$merge <- "MAD"
-  if(WaviOptions$method == "Wavelets")
-    WaviOptions$merge <- "MAD"
-}
-if(WaviOptions$method == "HaarSeg")
-  WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
+try2 <- try({
+
+  if(WaviOptions$method == "HaarSeg")
+    WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
+  
+  if(is.null(WaviOptions$merge)) {
+    if(WaviOptions$method == "DNAcopy")
+      WaviOptions$merge <- "mergeLevels"
+    if(WaviOptions$method == "CGHseg")
+      WaviOptions$merge <- "MAD"
+    if(WaviOptions$method == "Wavelets")
+      WaviOptions$merge <- "MAD"
+  }
+})
+
+if(inherits(try2, "try-error"))
+  caughtUserError.Web("Options file incorrect")
+
+
+## if(is.null(WaviOptions$mergeRes)) {
+##   if(WaviOptions$method == "DNAcopy")
+##     WaviOptions$merge <- "mergeLevels"
+##   if(WaviOptions$method == "CGHseg")
+##     WaviOptions$merge <- "MAD"
+##   if(WaviOptions$method == "Wavelets")
+##     WaviOptions$merge <- "MAD"
+## }
+
+
+
 
 
 
