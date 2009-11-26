@@ -130,80 +130,219 @@ methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
 acceptedColors <- colors()
 
 
-new.custom <- function(segmresRDataName = "segmres.RData",
+
+
+
+put.part.rdata.together <- function(i, pos.start, pos.end) {
+
+  print(system.time( {
+    load("probeNames.RData")
+    probeNames <- probeNames[pos.start[i]:pos.end[i]]
+  }))
+
+
+  print(system.time( {
+    
+    load("chromData.RData")
+    open(chromData, readonly = TRUE)
+    chrs.part <- chromData[pos.start[i]:pos.end[i]]
+    close(chromData)
+    rm(chromData)
+  }))
+        
+  print(system.time( {
+    
+    load("posData.RData")
+    open(posData, readonly = TRUE)
+    poss.part <- posData[pos.start[i]:pos.end[i]]
+    close(posData)
+    rm(posData)
+  }))
+
+
+
+  print(system.time( {
+    
+    load("segmres.RData")
+    open(segmres[[2]], readonly = TRUE)
+    oname <- paste("calls.out.", i, sep = "")
+    assign(oname,
+           data.frame(
+                      ProbeName = probeNames,
+                      Chr = chrs.part,
+                      Position = poss.part,
+                      segmres[[2]][pos.start[i]:pos.end[i], , drop = FALSE])
+           )
+    save(file = paste(oname, ".RData", sep = ""), list = c(oname))
+    write.table(file = paste(oname, ".txt", sep = ""), get(oname),
+                row.names = FALSE, sep = "\t", quote = FALSE)
+    rm(list = c(oname))
+    close(segmres[[2]])
+  }))
+
+  print(system.time( {
+    
+    open(segmres[[1]], readonly = TRUE)
+    oname <- paste("segmented.out.", i, sep = "")
+    assign(oname,
+           data.frame(
+                      ProbeName = probeNames,
+                      Chr = chrs.part,
+                      Position = poss.part,
+                      segmres[[1]][pos.start[i]:pos.end[i], , drop = FALSE])
+           )
+    save(file = paste(oname, ".RData", sep = ""), list = c(oname))
+    write.table(file = paste(oname, ".txt", sep = ""), get(oname),
+                row.names = FALSE, sep = "\t", quote = FALSE)
+    rm(list = c(oname))
+    close(segmres[[1]])
+    rm(segmres)
+  }))
+  print(system.time( {
+    
+    load("cghData.RData")
+    open(cghData, readonly = TRUE)
+    oname <- paste("original.", i, sep = "")
+    assign(oname,
+           data.frame(
+                      ProbeName = probeNames,
+                      Chr = chrs.part,
+                      Position = poss.part,
+                      cghData[pos.start[i]:pos.end[i], , drop = FALSE])
+           )
+    save(file = paste(oname, ".RData", sep = ""), list = c(oname))
+    rm(list = c(oname))
+    close(cghData)
+    rm(cghData)
+  }))
+ 
+}
+
+
+
+
+new.custom2 <- function(segmresRDataName = "segmres.RData",
                        cghRDataName = "cghData.RData",
                        chromRDataName = "chromData.RData",
                        posRDataName = "posData.RData",
-                       probeNamesRDataName = "probeNames.RData") {
-  load(posRDataName)
+                       probeNamesRDataName = "probeNames.RData",
+                       nround = 6) {
+
   load(chromRDataName)
-  load(cghRDataName)
-  load(segmresRDataName)
-  load(probeNamesRDataName)
-
-##  nodeWhere("new.cutom 1")
-  
-  narrays <- ncol(segmres[[1]])
-  seqi <- seq.int(1, narrays)
-
-  if(!is.factor(probeNames))
-    probeNames <- factor(probeNames)
-  
-  list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
-                 Chr = chromData,
-                 Position = posData)
-  ## close(list.1[[1]]) ## Don't close; must be open for
-  ## later writing
-  rm(probeNames)
-  gc()
-  l.smoothed <- lapply(seqi,
-                       function(i) segmres[[1]][[i]])
-  l.calls <- lapply(seqi,
-                    function(i) segmres[[2]][[i]])
-  l.original <- lapply(seqi,
-                       function(i) cghData[[i]])
-
-  names(l.smoothed) <- names(l.calls) <- names(l.original) <-
-    names(segmres[[1]])
-
-  l.smoothed <- c(list.1, l.smoothed)
-  l.calls <- c(list.1, l.calls)
-  l.original <- c(list.1, l.original)
-
-  segmentedffdf <- do.call("ffdf", l.smoothed)
-  callsffdf <- do.call("ffdf", l.calls)
-  originalffdf <- do.call("ffdf", l.original)
-
-  open(segmentedffdf)
-  open(callsffdf)
-  open(originalffdf)
-  
-  write.table.ffdf(segmentedffdf, file = "segmented.out.txt",
-                   sep = "\t", quote = FALSE)
-  write.table.ffdf(callsffdf, file = "calls.out.txt",
-                   sep = "\t", quote = FALSE)
-
   rle.chr <- intrle(as.integer(chromData[]))
   chr.end <- cumsum(rle.chr$lengths)
   chr.start <- c(1, chr.end[-length(chr.end)] + 1)
   seqc <- seq.int(1, length(chr.start))
 
-  f1 <- function(i,  objectin, nameout) {
-    oname <- paste(nameout, i, sep = "")
-    assign(oname,
-           objectin[ri(chr.start[i], chr.end[i]), ])
-    save(file = paste(oname, ".RData", sep = ""),
-         list = c(oname), compress = FALSE)
-  }
-  null <- sapply(seqc, f1, segmentedffdf, "segmented.out.")
-  null <- sapply(seqc, f1, callsffdf, "calls.out.")
-  null <- sapply(seqc, f1, originalffdf, "original.")
-  
-  null <- close(segmentedffdf)
-  null <- close(callsffdf)
-  null <- close(originalffdf)
-  return(0)
+  null <- sfClusterApplyLB(seqc, put.part.rdata.together,
+                           chr.start, chr.end)
+
+  ## using OS cat all calls and segmented
+  os.call.1 <- paste("cat ",
+                     paste("calls.out.", seqc, ".txt", sep = "", collapse = " "),
+                     " > calls.out.txt")
+
+  os.call.2 <- paste("cat ",
+                     paste("segmented.out.", seqc, ".txt", sep = "", collapse = " "),
+                     " > segmented.out.txt")
+  system(os.call.1)
+  system(os.call.2)
 }
+  
+
+
+
+## new.custom <- function(segmresRDataName = "segmres.RData",
+##                        cghRDataName = "cghData.RData",
+##                        chromRDataName = "chromData.RData",
+##                        posRDataName = "posData.RData",
+##                        probeNamesRDataName = "probeNames.RData",
+##                        nround = 6) {
+##   load(posRDataName)
+##   load(chromRDataName)
+##   load(cghRDataName)
+##   load(segmresRDataName)
+##   load(probeNamesRDataName)
+  
+##   narrays <- ncol(segmres[[1]])
+##   seqi <- seq.int(1, narrays)
+
+##   if(!is.factor(probeNames))
+##     probeNames <- factor(probeNames)
+  
+##   list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
+##                  Chr = chromData,
+##                  Position = posData)
+##   ## close(list.1[[1]]) ## Don't close; must be open for
+##   ## later writing
+##   rm(probeNames)
+##   gc()
+##   l.smoothed <- lapply(seqi,
+##                        function(i) segmres[[1]][[i]])
+##   l.calls <- lapply(seqi,
+##                     function(i) segmres[[2]][[i]])
+##   l.original <- lapply(seqi,
+##                        function(i) cghData[[i]])
+
+##   names(l.smoothed) <- names(l.calls) <- names(l.original) <-
+##     names(segmres[[1]])
+
+##   l.smoothed <- c(list.1, l.smoothed)
+##   l.calls <- c(list.1, l.calls)
+##   l.original <- c(list.1, l.original)
+
+##   segmentedffdf <- do.call("ffdf", l.smoothed)
+##   callsffdf <- do.call("ffdf", l.calls)
+##   originalffdf <- do.call("ffdf", l.original)
+
+##   callsffdf.no.names <- do.call("ffdf", l.calls[-1])
+  
+##   open(segmentedffdf)
+##   open(callsffdf)
+##   open(originalffdf)
+  
+##   ## write.table.ffdf(segmentedffdf, file = "segmented.out.txt",
+##   ##                  sep = "\t", quote = FALSE)
+##   ## write.table.ffdf(callsffdf, file = "calls.out.txt",
+##   ##                  sep = "\t", quote = FALSE)
+
+
+##   ############  Change this to something faster/better/before
+##   ############  How does it work with many columns?
+##   ############  Could use same logic for chromosome and position
+##   write("ProbeName", file = "pn2.txt")
+##   write(probeNames, file = "pn2.txt",
+##         append = TRUE)
+##   write.table.ffdf(callsffdf.no.names, file = "call.no.name.txt",
+##                    sep = "\t", quote = FALSE)
+##   system("paste pn2.txt call.no.name,txt > calls.out.txt")
+##   #################################
+
+  
+##   rle.chr <- intrle(as.integer(chromData[]))
+##   chr.end <- cumsum(rle.chr$lengths)
+##   chr.start <- c(1, chr.end[-length(chr.end)] + 1)
+##   seqc <- seq.int(1, length(chr.start))
+
+##   f1 <- function(i,  objectin, nameout) {
+##     oname <- paste(nameout, i, sep = "")
+##     assign(oname,
+##            objectin[ri(chr.start[i], chr.end[i]), ])
+##     save(file = paste(oname, ".RData", sep = ""),
+##          list = c(oname), compress = FALSE)
+##   }
+
+##   ## the following three lines take their time!!
+##   ## parallelize!! yes, via clusterApplyLB??
+##   null <- sapply(seqc, f1, segmentedffdf, "segmented.out.")
+##   null <- sapply(seqc, f1, callsffdf, "calls.out.")
+##   null <- sapply(seqc, f1, originalffdf, "original.")
+  
+##   null <- close(segmentedffdf)
+##   null <- close(callsffdf)
+##   null <- close(originalffdf)
+##   return(0)
+## }
   
 
 
@@ -357,7 +496,8 @@ if(checkpoint.num < 1) {
   cat("\n gc right before checkpoint 1 \n")
   print(gc())
 
-  to.save <- c("numarrays", "chromnum", "new.custom",
+  to.save <- c("numarrays", "chromnum", "new.custom2",
+               "put.part.rdata.together",
                "tableChromArray",
                "WaviOptions", ".__ADaCGH_SERVER_APPL",
                "doCheckpoint", "NormalTermination",
@@ -464,7 +604,8 @@ if(checkpoint.num < 3) {
   print(gc())
 
   to.save <- c("numarrays", "chromnum",
-               "tableChromArray", "new.custom",
+               "tableChromArray", "new.custom2",
+               "put.part.rdata.together",
                "WaviOptions", ".__ADaCGH_SERVER_APPL",
                "doCheckpoint", "NormalTermination",
                "caughtUserError.Web", "caughtOurError.Web")
@@ -484,14 +625,6 @@ if(checkpoint.num < 3) {
 
 if(checkpoint.num < 5) {
 
-  ### We do the writing of files in another node, by forking.
-  ### This should be much faster than the remaining operations
-  ### and we do not load the master. Check at end.
-
-  library(multicore)
-  parallel(new.custom(), silent = FALSE)
-  
-  
   trythis <- try(
                  pChromPlot(outRDataName = "segmres.RData",
                             cghRDataName = "cghData.RData",
@@ -541,15 +674,28 @@ if(checkpoint.num < 5) {
   cat("\n gc right after plotting \n")
   print(gc())
 
-  ## check writing out worked
-  parall.writing <- collect()[[1]]
-  if(inherits(parall.writing, "try-error")) {
-    caughtOurError.Web("ERROR in data output")
-  }
+ to.save <- c("numarrays", "chromnum",
+               "tableChromArray", "new.custom2",
+               "put.part.rdata.together",
+               "WaviOptions", ".__ADaCGH_SERVER_APPL",
+               "doCheckpoint", "NormalTermination",
+               "caughtUserError.Web", "caughtOurError.Web")
   
-  NormalTermination()
+  checkpoint.num <- doCheckpoint(5, to.save)
+   cat("\n gc right after checkpoint 3 \n")
+  print(gc())
 }
 
 
-
+if(checkpoint.num < 7) {
+  cat("\n Before writing output files\n")
+  print(date())
+  new.custom2()
+  cat("\n After writing output files\n")
+  print(date())
+  print(gc())
+  system("tar -czf results.txt.tar.gz calls.out*txt segmented.out*txt")
+  system("tar -czf results.RData.tar.gz calls.out.*.RData segmented.out.*.RData original.*.RData")
+  NormalTermination()
+}
 

@@ -44,5 +44,10 @@ for i in $(ls ./runs-tmp/tmp-standalone/); do cp f2-standalone.R ./runs-tmp/tmp-
 
 for i in $(ls ./runs-tmp/tmp-standalone/); do cd ./runs-tmp/tmp-standalone/$i; echo "*********"; echo; echo; echo $i; R-2.10 --no-readline --no-save --slave < f2-standalone.R >>f2.Rout 2>>f2status; cd /http/adacgh-server; done
 
+echo 
+echo
+echo
+echo "Verify output"
+
 
 for i in $(ls ./runs-tmp/tmp-standalone/); do cd ./runs-tmp/tmp-standalone/$i; echo "*********"; echo; echo; echo $i; cat R_Status.txt; cd /http/adacgh-server; done
