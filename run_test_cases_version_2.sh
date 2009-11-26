@@ -19,6 +19,7 @@ rm -f -r ./runs-tmp/tmp-2/glad-ok
 rm -f -r ./runs-tmp/tmp-2/haarseg-ok
 rm -f -r ./runs-tmp/tmp-2/140-one
 rm -f -r ./runs-tmp/tmp-2/140-two
+rm -f -r ./runs-tmp/tmp-2/several-large
 
 
 
@@ -32,6 +33,7 @@ cp -a ./test-cases/cghseg-ok* ./runs-tmp/tmp-2/.
 cp -a ./test-cases/haarseg-ok ./runs-tmp/tmp-2/.
 cp -a ./test-cases/140-one-master ./runs-tmp/tmp-2/140-one
 cp -a ./test-cases/140-two-master ./runs-tmp/tmp-2/140-two
+cp -a ./test-cases/several-large ./runs-tmp/tmp-2/several-large
 
 
 /http/adacgh-server/runADaCGHserver-2.py /http/adacgh-server/runs-tmp/tmp-2/dnacopy-ok

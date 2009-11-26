@@ -21,16 +21,12 @@
 
 
 ### FIXME: qué pasa con un solo array o un solo chrom???
-### FIXME: poner opcinoes para merging como son las nuevas!!!
-### y permitir las tres posibls. para cghseg y wavelets.
-### FIXME: escribir el nuevo fichero runADaCGH...
 
 
 
 
 
-### FIXME!!! change to TRUE
-assign(".__ADaCGH_SERVER_APPL", FALSE)
+assign(".__ADaCGH_SERVER_APPL", TRUE)
 
 
 library(ADaCGH2, verbose = FALSE)
@@ -149,6 +145,9 @@ new.custom <- function(segmresRDataName = "segmres.RData",
   
   narrays <- ncol(segmres[[1]])
   seqi <- seq.int(1, narrays)
+
+  if(!is.factor(probeNames))
+    probeNames <- factor(probeNames)
   
   list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
                  Chr = chromData,
@@ -460,12 +459,7 @@ if(checkpoint.num < 3) {
     caughtOurError.Web(trythis)
   cat("\n\n Segmentation done \n\n")
   save(segmres, file = "segmres.RData", compress = FALSE)
-
-
-  ## FIXME 
-  ## adacgh.server.output <- segmres[[1]]
-  ## save(adacgh.server.output, file = "adacgh.server.output.RData")
-  
+ 
   cat("\n gc right before checkpoint 3 \n")
   print(gc())
 

@@ -7,4 +7,4 @@ colorNoChange	black
 colorGain	green
 colorLoss	pink
 colorSmooth	red
-merge		mergeLevels
+merge	mergeLevels
