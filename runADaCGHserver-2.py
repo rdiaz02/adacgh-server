@@ -401,7 +401,7 @@ def Rrun(tmpDir, lamSuffix):
     Rcommand = 'export LAM_MPI_SESSION_SUFFIX="' + lamSuffix + \
                '"; cd ' + tmpDir + \
                '; sleep 1; ' + Rexec + \
-               ' --no-readline --no-save --slave <f1.R >>f1.Rout 2>> R_Status.txt &'
+               ' --no-readline --no-save --slave <f2.R >>f2.Rout 2>> R_Status.txt &'
     Rtorun = os.system(Rcommand)
     
 ### FIXME: something potentially weird here:
@@ -458,7 +458,7 @@ def did_R_crash_in_slaves(tmpDir, machine_root = 'karl'):
 
 
 def did_lam_crash(tmpDir, machine_root = 'karl'):
-    """ Verify whether LAM/MPI crashed by checking logs and f1.Rout
+    """ Verify whether LAM/MPI crashed by checking logs and f2.Rout
     for single universe lamboot."""
     OTHER_LAM_MSGS = 'Call stack within LAM:'
     lam_logs = glob.glob(tmpDir + '/' + machine_root + '*.*.*.log')
@@ -664,10 +664,10 @@ writeStatusServer('Running')
 # shutil.copyfile(inputDir + '/options.txt',
 #                 tmpDir + '/options.txt')
 
-shutil.copyfile(appDir + '/f1.R',
-                tmpDir + '/f1.R')
+shutil.copyfile(appDir + '/f2.R',
+                tmpDir + '/f2.R')
 os.system('/bin/touch ' + tmpDir + '/R_Error_msg.txt')
-touchRout = os.system("/bin/touch " + tmpDir + "/f1.Rout") 
+touchRout = os.system("/bin/touch " + tmpDir + "/f2.Rout") 
 touchRrunning = os.system('/bin/touch ' +
                           runningProcs + '/R.' + newDir +
                           "@" + socket.gethostname())

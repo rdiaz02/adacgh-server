@@ -8,3 +8,4 @@ colorGain	green
 colorLoss	pink
 colorSmooth	red
 merge	mergeLevels
+merging	mergeLevels

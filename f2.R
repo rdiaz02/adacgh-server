@@ -433,13 +433,13 @@ try2 <- try({
   if(WaviOptions$method == "HaarSeg")
     WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
   
-  if(is.null(WaviOptions$merge)) {
+  if(is.null(WaviOptions$merging)) {
     if(WaviOptions$method == "DNAcopy")
-      WaviOptions$merge <- "mergeLevels"
-    if(WaviOptions$method == "CGHseg")
-      WaviOptions$merge <- "MAD"
+      WaviOptions$merging <- "mergeLevels"
+    if(WaviOptions$method == "CGHseg") 
+      WaviOptions$merging <- "MAD"
     if(WaviOptions$method == "Wavelets")
-      WaviOptions$merge <- "MAD"
+      WaviOptions$merging <- "MAD"
   }
 })
 
@@ -524,6 +524,9 @@ if (.__ADaCGH_SERVER_APPL) {
                                    strip.white = TRUE)
                 )
   tmpDir <- getwd()
+  hostn <- system("hostname", intern = TRUE)
+  pid <- Sys.getpid()
+
   sed.command <- paste("sed -i 's/RprocessPid\\t",
                        lamSESSION, "\\t", hostn, "/",
                        pid, "\\t",
@@ -593,7 +596,7 @@ if(checkpoint.num < 3) {
     segmres <- fseg(cghRDataName = "cghData.RData",
                     chromRDataName = "chromData.RData",
                     posRDataName = "posData.RData",
-                    mergeSegs = WaviOptions$mergeRes,
+                    merging = WaviOptions$merging,
                     minDiff = WaviOptions$Wave.minDiff,
                     CGHseg.thres = WaviOptions$CGHseg.s,
                     HaarSeg.m = WaviOptions$HaarSeg.m)
