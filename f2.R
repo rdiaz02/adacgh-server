@@ -483,6 +483,10 @@ if(checkpoint.num < 1) {
   ## With ff and new functions. Reading data, etc, is done in a child process
   ## that does only that. That way, main process does not use a lot of RAM
   ## Verify we are doing OK killing the child, or whatever. I think we are.
+
+  ## Recall multicore leaves zombies. But we cannot use "fork" in
+  ## package fork, since fork does not permit
+  ## getting back the utput of a function.
   library(multicore)
   parallel(inputDataToADaCGHData(), silent = FALSE)
   tableChromArray <- collect()[[1]]
