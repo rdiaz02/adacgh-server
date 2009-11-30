@@ -55,7 +55,7 @@ done
 echo 
 echo
 echo
-echo "Several identical"
+echo "Running Several identical"
 
 for i in $(ls ./runs-tmp/tmp-2-several-identical/);
 do echo "*********"; echo; echo; echo $i; 
@@ -68,6 +68,7 @@ echo
 echo
 echo
 echo "Verify output"
+echo  "****************"
 
 
 for i in $(ls ./runs-tmp/tmp-2/); 
@@ -76,6 +77,10 @@ do cd ./runs-tmp/tmp-2/$i;
     cat R_Status.txt; 
     cd /http/adacgh-server; 
 done
+
+echo
+echo "Verify output several identical"
+echo  "****************"
 
 
 for i in $(ls ./runs-tmp/tmp-2-several-identical/); 
