@@ -1,3 +1,6 @@
+- run en cluster version antigua con nuevo R-2.10 (nuevos paquetes GLAD, etc).
+		* instalar antigua version
+
 - verificar numerico
 - fork en vez multicore
 - quitar output nodeWhere
