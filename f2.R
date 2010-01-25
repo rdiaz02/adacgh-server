@@ -241,12 +241,24 @@ new.custom2 <- function(segmresRDataName = "segmres.RData",
   os.call.1 <- paste("cat ",
                      paste("calls.out.", seqc, ".txt", sep = "", collapse = " "),
                      " > calls.out.txt")
+  system(os.call.1)
 
+  system("head -1 calls.out.1.txt > tmphead")
+  system("grep -P -f tmphead -v calls.out.txt > tmp.calls.out.txt")
+  system("cat tmphead tmp.calls.out.txt > calls.out.txt")
+  system("chmod 777 calls.out.txt")
+  system("rm tmp.calls.out.txt")
+  
   os.call.2 <- paste("cat ",
                      paste("segmented.out.", seqc, ".txt", sep = "", collapse = " "),
                      " > segmented.out.txt")
-  system(os.call.1)
   system(os.call.2)
+  system("head -1 segmented.out.1.txt > tmphead")
+  system("grep -P -f tmphead -v segmented.out.txt > tmp.segmented.out.txt")
+  system("cat tmphead tmp.segmented.out.txt > segmented.out.txt")
+  system("chmod 777 segmented.out.txt")
+  system("rm tmp.segmented.out.txt")
+  system("rm tmphead")
 }
   
 
