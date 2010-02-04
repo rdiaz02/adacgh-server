@@ -507,7 +507,7 @@ if(checkpoint.num < 1) {
   }
 
   numarrays <- max(tableChromArray$ArrayNum)
-  chromnum <- max(tableChromArray$Chrom)
+  chromnum <- max(tableChromArray$ChromNum)
 
   cat("\n gc right before checkpoint 1 \n")
   print(gc())

@@ -9,6 +9,7 @@ rm -r -f ./runs-tmp/tmp-2/*
 rm -r -f ./runs-tmp/tmp-2-several-identical/*
 
 
+cp -a ./test-cases/0-two-chroms ./runs-tmp/tmp-2/.
 cp -a ./test-cases/dnacopy-ok ./runs-tmp/tmp-2/.
 cp -a ./test-cases/biohmm-ok ./runs-tmp/tmp-2/.
 cp -a ./test-cases/hmm-ok ./runs-tmp/tmp-2/.
