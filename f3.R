@@ -29,9 +29,9 @@
 assign(".__ADaCGH_SERVER_APPL", TRUE)
 
 
-library(ADaCGH2, verbose = FALSE)
+library(ADaCGH21, verbose = FALSE)
 cat("\nADaCGH2 Version :\n")
-packageDescription("ADaCGH2")$Version
+packageDescription("ADaCGH21")$Version
 cat("\n\n")
 
 
@@ -71,11 +71,11 @@ doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
 #doCheckpoint <- ADaCGH:::doCheckpoint
 
 
-caughtUserError.Web <- ADaCGH2:::caughtUserError.Web
-caughtOurError.Web <- ADaCGH2:::caughtOurError.Web
+caughtUserError.Web <- ADaCGH21:::caughtUserError.Web
+caughtOurError.Web <- ADaCGH21:::caughtOurError.Web
 
 NormalTermination <- function(){
-    ADaCGH2:::snowfall.clean.quit.Web()
+    ADaCGH21:::snowfall.clean.quit.Web()
     status <- file("R_Status.txt", "w")
     cat("Normal termination\n", file = status)
     flush(status)
@@ -455,28 +455,79 @@ try2 <- try({
   }
 
   if(!is.null(WaviOptions$DNAcopy.min.width)) {
+    WaviOptions$DNAcopy.min.width <- as.numeric(WaviOptions$DNAcopy.min.width)
     if((WaviOptions$DNAcopy.min.width > 5) |
        (WaviOptions$DNAcopy.min.width < 2))
       caughtUserError.Web("min.width for DNAcopy must be between 2 and 5")
   } else {
+    if(WaviOptions$method == "DNAcopy")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS DNAcopy.min.width \n\n\n")
     WaviOptions$DNAcopy.min.width <- 2
   }
   if(!is.null(WaviOptions$DNAcopy.alpha)) {
+    WaviOptions$DNAcopy.alpha <- as.numeric(WaviOptions$DNAcopy.alpha)
     if((WaviOptions$DNAcopy.alpha >= 1) |
        (WaviOptions$DNAcopy.alpha <= 0))
       caughtUserError.Web("alpha for DNAcopy must be between 0 and 1")
   } else {
+    if(WaviOptions$method == "DNAcopy")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS DNAcopy.alpha\n\n\n")
     WaviOptions$DNAcopy.alpha <- 0.01
   }
   if(!is.null(WaviOptions$DNAcopy.nperm)) {
+    WaviOptions$DNAcopy.nperm <- as.numeric(WaviOptions$DNAcopy.nperm)
     if(WaviOptions$DNAcopy.nperm < 1)
       caughtUserError.Web("nperm for DNAcopy must > 1")
   } else {
+    if(WaviOptions$method == "DNAcopy")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS DNAcopy.nperm\n\n\n")
     WaviOptions$DNAcopy.nperm <- 10000
   }
 
+  if(is.null(WaviOptions$GLAD.deltaN)) {
+    if(WaviOptions$method == "GLAD")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS GLAD.deltaN\n\n\n")
+    WaviOptions$GLAD.deltaN <- 0.10
+  } else {
+    WaviOptions$GLAD.deltaN <- as.numeric(WaviOptions$GLAD.deltaN)
+  }
+  if(is.null(WaviOptions$GLAD.forceGL1)) {
+    if(WaviOptions$method == "GLAD")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS GLAD.forceGL1\n\n\n")
+    WaviOptions$GLAD.forceGL1 <- -0.15
+  } else {
+    WaviOptions$GLAD.forceGL1 <- as.numeric(WaviOptions$GLAD.forceGL1)
+  }
+  if(is.null(WaviOptions$GLAD.forceGL2)) {
+    if(WaviOptions$method == "GLAD")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS GLAD.forceGL2\n\n\n")
+    WaviOptions$GLAD.forceGL2 <- 0.15
+  } else {
+    WaviOptions$GLAD.forceGL2 <- as.numeric(WaviOptions$GLAD.forceGL2)
+  }
+  WaviOptions$GLAD.forceGL <- c(WaviOptions$GLAD.forceGL1,
+                                WaviOptions$GLAD.forceGL2)
   
-
+  if(is.null(WaviOptions$GLAD.deletion)) {
+    if(WaviOptions$method == "GLAD")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS GLAD.deletion\n\n\n")
+    WaviOptions$GLAD.deletion <- -5
+  } else {
+    WaviOptions$GLAD.deletion <- as.numeric(WaviOptions$GLAD.deletion)
+  }
+  if(is.null(WaviOptions$GLAD.amplicon)) {
+    if(WaviOptions$method == "GLAD")
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS GLAD.amplicon\n\n\n")
+    WaviOptions$GLAD.amplicon <- 1
+  } else {
+    WaviOptions$GLAD.amplicon <- as.numeric(WaviOptions$GLAD.amplicon)
+  }
+  if(is.null(WaviOptions$HMM.AIC.BIC)) {
+    if(WaviOptions$method %in% c("HMM", "BioHMM"))
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS HMM.AIC.BIC\n\n\n")
+    WaviOptions$HMM.AIC.BIC <- "AIC"
+  }
+  
 })
 
 if(inherits(try2, "try-error"))
@@ -638,7 +689,12 @@ if(checkpoint.num < 3) {
                     mad.threshold = WaviOptions$mad.threshold,
                     min.width = WaviOptions$DNAcopy.min.width,
                     alpha = WaviOptions$DNAcopy.alpha,
-                    nperm = WaviOptions$DNAcopy.nperm)
+                    nperm = WaviOptions$DNAcopy.nperm,
+                    deltaN = WaviOptions$GLAD.deltaN,
+                    forceGL = WaviOptions$GLAD.forceGL,
+                    deletion = WaviOptions$GLAD.deletion,
+                    amplicon = WaviOptions$GLAD.amplicon,
+                    aic.or.bic = WaviOptions$HMM.AIC.BIC)
   })
   
   if(inherits(trythis, "try-error"))

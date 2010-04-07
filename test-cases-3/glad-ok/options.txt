@@ -1,0 +1,12 @@
+method	GLAD
+idtype	None
+organism	None
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
+GLAD.deltaN	0.5
+GLAD.forceGL1	0.5
+GLAD.forceGL2	-0.9
+GLAD.amplicon	2
+GLAD.deletion	-3

@@ -1,0 +1,8 @@
+method	HMM
+idtype	None
+organism	None
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
+HMM.AIC.BIC	BIC

@@ -1,0 +1,11 @@
+method	DNAcopy
+idtype	ug
+organism	Hs
+colorNoChange	black
+colorGain	green
+colorLoss	pink
+colorSmooth	red
+DNAcopy.min.width	3
+DNAcopy.alpha	0.001
+DNAcopy.nperm	100
+
