@@ -1,54 +1,11 @@
-####  Copyright (C) 2005, 2006, 2007, Ramon Diaz-Uriarte <rdiaz02@gmail.com>
-
-#### This program is free software; you can redistribute it and/or
-#### modify it under the terms of the GNU General Public License
-#### as published by the Free Software Foundation; either version 2
-#### of the License, or (at your option) any later version.
-
-#### This program is distributed in the hope that it will be useful,
-#### but WITHOUT ANY WARRANTY; without even the implied warranty of
-#### MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#### GNU General Public License for more details.
-
-#### You should have received a copy of the GNU General Public License
-#### along with this program; if not, write to the Free Software
-#### Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307,
-#### USA.
-
-######################################################################
-######################################################################
-######################################################################
-
-
-### FIXME: qué pasa con un solo array o un solo chrom???
-
-
-
-
-
-assign(".__ADaCGH_SERVER_APPL", TRUE)
+rm(list = ls())
+assign(".__ADaCGH_SERVER_APPL", FALSE)
 
 
 library(ADaCGH21, verbose = FALSE)
 cat("\nADaCGH2 Version :\n")
 packageDescription("ADaCGH21")$Version
 cat("\n\n")
-
-
-
-
-
-##############################################
-##############################################
-######                              ##########
-######         Error checking       ##########
-######          utilities           ##########
-######            and               ##########
-######          other functions     ##########
-######                              ##########
-##############################################
-##############################################
-
 
 doCheckpoint <- function(num, to.save, delete.rest = TRUE) {
 ##    checkpoint.num.new <- num
@@ -260,113 +217,6 @@ new.custom2 <- function(segmresRDataName = "segmres.RData",
   system("rm tmp.segmented.out.txt")
   system("rm tmphead")
 }
-  
-
-
-
-## new.custom <- function(segmresRDataName = "segmres.RData",
-##                        cghRDataName = "cghData.RData",
-##                        chromRDataName = "chromData.RData",
-##                        posRDataName = "posData.RData",
-##                        probeNamesRDataName = "probeNames.RData",
-##                        nround = 6) {
-##   load(posRDataName)
-##   load(chromRDataName)
-##   load(cghRDataName)
-##   load(segmresRDataName)
-##   load(probeNamesRDataName)
-  
-##   narrays <- ncol(segmres[[1]])
-##   seqi <- seq.int(1, narrays)
-
-##   if(!is.factor(probeNames))
-##     probeNames <- factor(probeNames)
-  
-##   list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
-##                  Chr = chromData,
-##                  Position = posData)
-##   ## close(list.1[[1]]) ## Don't close; must be open for
-##   ## later writing
-##   rm(probeNames)
-##   gc()
-##   l.smoothed <- lapply(seqi,
-##                        function(i) segmres[[1]][[i]])
-##   l.calls <- lapply(seqi,
-##                     function(i) segmres[[2]][[i]])
-##   l.original <- lapply(seqi,
-##                        function(i) cghData[[i]])
-
-##   names(l.smoothed) <- names(l.calls) <- names(l.original) <-
-##     names(segmres[[1]])
-
-##   l.smoothed <- c(list.1, l.smoothed)
-##   l.calls <- c(list.1, l.calls)
-##   l.original <- c(list.1, l.original)
-
-##   segmentedffdf <- do.call("ffdf", l.smoothed)
-##   callsffdf <- do.call("ffdf", l.calls)
-##   originalffdf <- do.call("ffdf", l.original)
-
-##   callsffdf.no.names <- do.call("ffdf", l.calls[-1])
-  
-##   open(segmentedffdf)
-##   open(callsffdf)
-##   open(originalffdf)
-  
-##   ## write.table.ffdf(segmentedffdf, file = "segmented.out.txt",
-##   ##                  sep = "\t", quote = FALSE)
-##   ## write.table.ffdf(callsffdf, file = "calls.out.txt",
-##   ##                  sep = "\t", quote = FALSE)
-
-
-##   ############  Change this to something faster/better/before
-##   ############  How does it work with many columns?
-##   ############  Could use same logic for chromosome and position
-##   write("ProbeName", file = "pn2.txt")
-##   write(probeNames, file = "pn2.txt",
-##         append = TRUE)
-##   write.table.ffdf(callsffdf.no.names, file = "call.no.name.txt",
-##                    sep = "\t", quote = FALSE)
-##   system("paste pn2.txt call.no.name,txt > calls.out.txt")
-##   #################################
-
-  
-##   rle.chr <- intrle(as.integer(chromData[]))
-##   chr.end <- cumsum(rle.chr$lengths)
-##   chr.start <- c(1, chr.end[-length(chr.end)] + 1)
-##   seqc <- seq.int(1, length(chr.start))
-
-##   f1 <- function(i,  objectin, nameout) {
-##     oname <- paste(nameout, i, sep = "")
-##     assign(oname,
-##            objectin[ri(chr.start[i], chr.end[i]), ])
-##     save(file = paste(oname, ".RData", sep = ""),
-##          list = c(oname), compress = FALSE)
-##   }
-
-##   ## the following three lines take their time!!
-##   ## parallelize!! yes, via clusterApplyLB??
-##   null <- sapply(seqc, f1, segmentedffdf, "segmented.out.")
-##   null <- sapply(seqc, f1, callsffdf, "calls.out.")
-##   null <- sapply(seqc, f1, originalffdf, "original.")
-  
-##   null <- close(segmentedffdf)
-##   null <- close(callsffdf)
-##   null <- close(originalffdf)
-##   return(0)
-## }
-  
-
-
-
-
-##############################################
-##############################################
-######                              ##########
-######         Start execution      ##########
-######                              ##########
-##############################################
-##############################################
 
 if (.__ADaCGH_SERVER_APPL) {
   version
@@ -561,15 +411,6 @@ WaviOptions
 #######################################################
 #######################################################
 
-if(checkpoint.num < 1) {
-  
-  ## With ff and new functions. Reading data, etc, is done in a child process
-  ## that does only that. That way, main process does not use a lot of RAM
-  ## Verify we are doing OK killing the child, or whatever. I think we are.
-
-  ## Recall multicore leaves zombies. But we cannot use "fork" in
-  ## package fork, since fork does not permit
-  ## getting back the utput of a function.
   library(multicore)
   parallel(inputDataToADaCGHData(), silent = FALSE)
   tableChromArray <- collect()[[1]]
@@ -593,7 +434,9 @@ if(checkpoint.num < 1) {
   
   cat("\n gc right after checkpoint 1 \n")
   gc()
-}
+
+
+
 
 ################################################################
 ## MPI, LAM, etc.
@@ -672,128 +515,98 @@ if (.__ADaCGH_SERVER_APPL) {
 #######################################################
 
 
-if(checkpoint.num < 3) {
+fseg <- get(paste("pSegment", WaviOptions$method, sep = ""))
+segmres <- fseg(cghRDataName = "cghData.RData",
+                chromRDataName = "chromData.RData",
+                posRDataName = "posData.RData",
+                merging = WaviOptions$merging,
+                minDiff = WaviOptions$Wave.minDiff,
+                CGHseg.thres = WaviOptions$CGHseg.s,
+                mad.threshold = WaviOptions$mad.threshold,
+                min.width = WaviOptions$DNAcopy.min.width,
+                alpha = WaviOptions$DNAcopy.alpha,
+                nperm = WaviOptions$DNAcopy.nperm,
+                deltaN = WaviOptions$GLAD.deltaN,
+                forceGL = WaviOptions$GLAD.forceGL,
+                deletion = WaviOptions$GLAD.deletion,
+                amplicon = WaviOptions$GLAD.amplicon,
+                aic.or.bic = WaviOptions$HMM.AIC.BIC)
 
-  trythis <- try({
-    fseg <- get(paste("pSegment", WaviOptions$method, sep = ""))
-    segmres <- fseg(cghRDataName = "cghData.RData",
-                    chromRDataName = "chromData.RData",
-                    posRDataName = "posData.RData",
-                    merging = WaviOptions$merging,
-                    minDiff = WaviOptions$Wave.minDiff,
-                    CGHseg.thres = WaviOptions$CGHseg.s,
-                    mad.threshold = WaviOptions$mad.threshold,
-                    min.width = WaviOptions$DNAcopy.min.width,
-                    alpha = WaviOptions$DNAcopy.alpha,
-                    nperm = WaviOptions$DNAcopy.nperm,
-                    deltaN = WaviOptions$GLAD.deltaN,
-                    forceGL = WaviOptions$GLAD.forceGL,
-                    deletion = WaviOptions$GLAD.deletion,
-                    amplicon = WaviOptions$GLAD.amplicon,
-                    aic.or.bic = WaviOptions$HMM.AIC.BIC)
-  })
-  
-  if(inherits(trythis, "try-error"))
-    caughtOurError.Web(trythis)
-  cat("\n\n Segmentation done \n\n")
-  save(segmres, file = "segmres.RData", compress = FALSE)
- 
-  cat("\n gc right before checkpoint 3 \n")
-  print(gc())
+cat("\n\n Segmentation done \n\n")
+save(segmres, file = "segmres.RData", compress = FALSE)
 
-  to.save <- c("numarrays", "chromnum",
-               "tableChromArray", "new.custom2",
-               "put.part.rdata.together",
-               "WaviOptions", ".__ADaCGH_SERVER_APPL",
-               "doCheckpoint", "NormalTermination",
-               "caughtUserError.Web", "caughtOurError.Web")
-  
-  checkpoint.num <- doCheckpoint(3, to.save)
-   cat("\n gc right after checkpoint 3 \n")
-  print(gc())
+cat("\n gc right before checkpoint 3 \n")
+print(gc())
 
+to.save <- c("numarrays", "chromnum",
+             "tableChromArray", "new.custom2",
+             "put.part.rdata.together",
+             "WaviOptions", ".__ADaCGH_SERVER_APPL",
+             "doCheckpoint", "NormalTermination",
+             "caughtUserError.Web", "caughtOurError.Web")
 
+checkpoint.num <- doCheckpoint(3, to.save)
+cat("\n gc right after checkpoint 3 \n")
+print(gc())
 
-  
-}
+pChromPlot(outRDataName = "segmres.RData",
+           cghRDataName = "cghData.RData",
+           chromRDataName = "chromData.RData",
+           posRDataName = "posData.RData",
+           probenamesRDataName = "probeNames.RData",
+           colors = WaviOptions$colorsWavi,
+           imgheight = 350)
 
-
-
-
-
-if(checkpoint.num < 5) {
-
-  trythis <- try(
-                 pChromPlot(outRDataName = "segmres.RData",
-                            cghRDataName = "cghData.RData",
-                            chromRDataName = "chromData.RData",
-                            posRDataName = "posData.RData",
-                            probenamesRDataName = "probeNames.RData",
-                            colors = WaviOptions$colorsWavi,
-                            imgheight = 350)
-                 )
-  if(inherits(trythis, "try-error"))
-    caughtOurError.Web(trythis)
-  cat("\n\n Color plotting done \n\n")
-  cat("\n gc right after plotting \n")
-  print(gc())
+cat("\n\n Color plotting done \n\n")
+cat("\n gc right after plotting \n")
+print(gc())
 
   
   ## Plots without colours
   ## As plots would get overwritten I create a new dir, etc.
-  dir1 <- getwd()
-  dir.create("BW")
-  setwd("BW")
-  print(getwd())
-  sfClusterEval(setwd("BW"))
+dir1 <- getwd()
+dir.create("BW")
+setwd("BW")
+print(getwd())
+sfClusterEval(setwd("BW"))
 ##  mpi.remote.exec(setwd("BW"))
-  trythis <- try(
-                 pChromPlot(outRDataName = "../segmres.RData",
-                            cghRDataName = "../cghData.RData",
-                            chromRDataName = "../chromData.RData",
-                            posRDataName = "../posData.RData",
-                            probenamesRDataName = "../probeNames.RData",
-                            colors = c(rep("black", 3), "blue"),
-                            imgheight = 350)
-                 )
-  if(inherits(trythis, "try-error"))
-    caughtOurError.Web(trythis)
-  files.in.BW <- dir()
-  for (ffbw in files.in.BW) file.rename(ffbw, paste("BW_", ffbw, sep = ""))
-  null <- file.copy(from = dir(), to = dir1)
-  ##         system('mmv "*" "BW_#1"')
-  ##         system('cp * ../.')
-  setwd(dir1)
-  sfExport("dir1")
-  sfClusterEval(setwd(dir1))
+pChromPlot(outRDataName = "../segmres.RData",
+           cghRDataName = "../cghData.RData",
+           chromRDataName = "../chromData.RData",
+           posRDataName = "../posData.RData",
+           probenamesRDataName = "../probeNames.RData",
+           colors = c(rep("black", 3), "blue"),
+           imgheight = 350)
+files.in.BW <- dir()
+for (ffbw in files.in.BW) file.rename(ffbw, paste("BW_", ffbw, sep = ""))
+null <- file.copy(from = dir(), to = dir1)
+##         system('mmv "*" "BW_#1"')
+##         system('cp * ../.')
+setwd(dir1)
+sfExport("dir1")
+sfClusterEval(setwd(dir1))
 ##  mpi.remote.exec(setwd(dir1))
+
+cat("\n\n BW plotting done \n\n")
+cat("\n gc right after plotting \n")
+print(gc())
+
+to.save <- c("numarrays", "chromnum",
+             "tableChromArray", "new.custom2",
+             "put.part.rdata.together",
+             "WaviOptions", ".__ADaCGH_SERVER_APPL",
+             "doCheckpoint", "NormalTermination",
+             "caughtUserError.Web", "caughtOurError.Web")
   
-  cat("\n\n BW plotting done \n\n")
-  cat("\n gc right after plotting \n")
-  print(gc())
+checkpoint.num <- doCheckpoint(5, to.save)
 
- to.save <- c("numarrays", "chromnum",
-               "tableChromArray", "new.custom2",
-               "put.part.rdata.together",
-               "WaviOptions", ".__ADaCGH_SERVER_APPL",
-               "doCheckpoint", "NormalTermination",
-               "caughtUserError.Web", "caughtOurError.Web")
-  
-  checkpoint.num <- doCheckpoint(5, to.save)
-   cat("\n gc right after checkpoint 5 \n")
-  print(gc())
-}
-
-
-if(checkpoint.num < 7) {
-  cat("\n Before writing output files\n")
-  print(date())
-  new.custom2()
-  cat("\n After writing output files\n")
-  print(date())
-  print(gc())
-  system("tar -czf results.txt.tar.gz calls.out*txt segmented.out*txt")
-  system("tar -czf results.RData.tar.gz calls.out.*.RData segmented.out.*.RData original.*.RData")
-  NormalTermination()
-}
+cat("\n Before writing output files\n")
+print(date())
+new.custom2()
+cat("\n After writing output files\n")
+print(date())
+print(gc())
+system("tar -czf results.txt.tar.gz calls.out*txt segmented.out*txt")
+system("tar -czf results.RData.tar.gz calls.out.*.RData segmented.out.*.RData original.*.RData")
+NormalTermination()
 
