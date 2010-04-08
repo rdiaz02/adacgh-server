@@ -123,7 +123,7 @@ acceptedIDTypes <- c('None', 'cnio', 'affy', 'clone', 'acc', 'ensembl',
 acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
 acceptedMethodaCGH <- c ('Wavelets', 'DNAcopy', 'GLAD', 'HMM', 'BioHMM',
                       'CGHseg', 'HaarSeg')
-methodOptions <- list('Wavelets' = c('Wave.minDiff', 'mergeRes'),
+methodOptions <- list('Wavelets' = c('Wave.minDiff'),
                       'CGHseg'   = c('CGHseg.s'),
                       'HaarSeg'  = c('HaarSeg.m')
                       )
@@ -442,16 +442,26 @@ WaviOptions <- checkConvertMethodOptions(methodOptions, WaviOptions)
 ## we do not want to mess around with options anymore
 try2 <- try({
   
-  if(WaviOptions$method == "HaarSeg")
+  if(WaviOptions$method == "HaarSeg") {
     WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
+  } else {
+    if(!is.null(WaviOptions$mad.threshold)) {
+      WaviOptions$mad.threshold <- as.numeric(WaviOptions$mad.threshold)
+    } else {
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS mad.threshold\n\n\n")
+      WaviOptions$mad.threshold <- 3
+    }
+  }
   
-  if(is.null(WaviOptions$merging)) {
+  
+  
+  if(is.null(WaviOptions[["merge"]])) {
     if(WaviOptions$method == "DNAcopy")
-      WaviOptions$merging <- "mergeLevels"
+      WaviOptions$merge <- "mergeLevels"
     if(WaviOptions$method == "CGHseg") 
-      WaviOptions$merging <- "MAD"
+      WaviOptions$merge <- "MAD"
     if(WaviOptions$method == "Wavelets")
-      WaviOptions$merging <- "MAD"
+      WaviOptions$merge <- "MAD"
   }
 
   if(!is.null(WaviOptions$DNAcopy.min.width)) {
@@ -679,7 +689,7 @@ if(checkpoint.num < 3) {
     segmres <- fseg(cghRDataName = "cghData.RData",
                     chromRDataName = "chromData.RData",
                     posRDataName = "posData.RData",
-                    merging = WaviOptions$merging,
+                    merging = WaviOptions$merge,
                     minDiff = WaviOptions$Wave.minDiff,
                     CGHseg.thres = WaviOptions$CGHseg.s,
                     mad.threshold = WaviOptions$mad.threshold,
