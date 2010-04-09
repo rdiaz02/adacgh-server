@@ -84,9 +84,10 @@ Wavelets
 We use R code originally provided by Li Hsu. We use all default parameters
 of this method. There is no R package, aside from our, that provides a
 canonical implementation of this method. We use the same default
-parameters as those available from our ADaCGH package from CRAN.  (minDiff
-= 0.25, minMergeDiff = 0.05, thrLvl = 3, initClusterLevels = 10). After
-segmentation, we use calling using the MAD approach (see HaarSeg, above).
+parameters as those available from our ADaCGH package (v. 1.5-3) from
+CRAN.  (minDiff = 0.25, minMergeDiff = 0.05, thrLvl = 3, initClusterLevels
+= 10). After segmentation, we use calling using the MAD approach (see
+HaarSeg, above).
 
 
 

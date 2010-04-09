@@ -124,9 +124,9 @@ acceptedOrganisms <- c('None', 'Hs', 'Mm', 'Rn')
 acceptedMethodaCGH <- c ('Wavelets', 'DNAcopy', 'GLAD', 'HMM', 'BioHMM',
                       'CGHseg', 'HaarSeg')
 methodOptions <- list('Wavelets' = c('Wave.minDiff'),
-                      'CGHseg'   = c('CGHseg.s'),
-                      'HaarSeg'  = c('HaarSeg.m')
-                      )
+                      'CGHseg'   = c('CGHseg.s'))
+                      ## 'HaarSeg'  = c('HaarSeg.m')
+                      ## )
 acceptedColors <- colors()
 
 
