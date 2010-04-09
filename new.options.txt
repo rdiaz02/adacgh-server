@@ -1,0 +1,107 @@
+- DNAcopy.min.width
+- Un entero entre 2 y 5 (ambos incluidos)
+- 2
+- DNAcopy
+- Minimum number of markers for a changed segment
+
+******************************
+
+- DNAcopy.alpha
+- un real entre (0, 1) (o sea, 0 y 1 excluidos)
+- 0.01
+- DNAcopy
+- Significance levels for the test to accept change-points
+
+
+******************************
+
+
+- DNAcopy.nperm
+- un entero mayor que 1 
+- 10000
+- DNAcopy
+- Number of permutations used for p-value computation
+
+******************************
+
+- HMM.AIC.BIC
+- "AIC"/"BIC"
+- "AIC"
+- HMM, BioHMM
+- Use AIC or BIC for model selection.
+
+******************************
+
+- GLAD.deltaN
+- un real positivo
+0.10
+- GLAD
+- Region with smoothing values in between the interval  [-deltaN,+deltaN] are supposed to be normal
+
+
+******************************
+- GLAD.forceGL2
+- Un real (positivo, generalmente, pero no obligatoriamente)
+0.15
+- GLAD
+- Level with smoothing value greater than this one are considered as
+gained.
+
+
+******************************
+- GLAD.forceGL1
+- Un real (negativo, generalmente, pero no obligatoriamente)
+-0.15
+- GLAD
+- Level with smoothing value smaller than this one are considered as
+lost.
+
+******************************
+- GLAD.deletion
+- Un real (negativo, generalmente, pero no obligatoriamente)
+-5
+- GLAD
+-  Level (and outliers) with a smoothing value (log-ratio value)
+          lower than this threshold are consider as deletion.
+
+******************************
+- GLAD.amplicon
+- Un real (positivo, generalmente, pero no obligatoriamente)
+1
+- GLAD
+- Level (and outliers) with a smoothing value (log-ratio value)
+          greater than this threshold are consider as amplicon.
+
+******************************
+
+- mad.threshold
+- cualquier valor real positivo
+2
+- HaarSeg (y Wavelets y CGHseg, si usaran MAD)
+- Threshold for determining gains and losses. Smoothed values larger in
+absolute value than MAD * threshold are regarded as gained/lost.
+
+(Antes, teníamos HaarSeg.m, que era como mad.threshold, pero solo afectaba
+a HaarSeg.)
+
+
+******************************
+
+Opciones merging (esto SOLO afecta a CGHseg y wavelets, y creo que decidimos no ponerlo como opción, pero por si acaso, aquí esta).
+
+
+- merge 
+- "MAD"/"mergeLevels"/"none"
+
+- "mergeLevels"
+
+- Wavelets y CGHseg
+- Merging of output: use MAD (as HaarSeg), mergeLevels (Willenbrock and Fridlyand) or no merging of output
+
+
+******************************
+
+
+
+
+

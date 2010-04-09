@@ -1,0 +1,97 @@
+Segmentation:
+
+We use R, version 2.10.0 Patched (2009-11-09 r50375). We have prepared a
+package (currently called ADaCGH21), which is a successor of our ADaCGH
+package in CRAN.  This package parallelizes all calls to methods, and
+makes extensive usage of the ff package for memory-efficient storage of
+large data on disk. Details on the calls follow.
+
+
+
+GLAD
+
+We use version 2.6.0. Segmentation is done with the recommended daglad
+function (see vignette for GLAD). daglad is called using all the default
+options except, possibly, for the user-modifiable options of deltaN,
+forceGL, deletion, and amplicon.
+
+
+
+HaarSeg
+
+We use as the basic computational workhorse the original code from Erez
+Ben-Yaacov, downloaded from
+<http://www.ee.technion.ac.il/people/YoninaEldar/Info/software/HaarSeg.htm>
+on May 2009, and corresponding to Version 1.0 of June 2008. Note that this
+code (both the R code and the C code) is identical to the currently
+(2010-04-08) available one as an R package, HaarSeg_0.0.2.tar.gz (packaged
+2010-01-24). We use all the default options (the same as would be used in
+a call to the  "haarSeg" function in the current R package). The only user
+option is the mad.threshold parameter, which controls calling (not
+segmentation). See p. i141 of the original reference.
+
+
+DNAcopy
+
+We use version 1.20.0 of the DNAcopy package. We use all the default
+parameters which would be equivalente to calling the "segment" function
+with default parameters except, possibly, for the user-modifiable options
+of min.width, alpha, and nperm. mergeLevels is always used on the output,
+using all the default options of mergeLevels, as implemented originally in
+snapCGH (v. 1.16.0), but with two bug-fixes for the Ansari test. Following
+the recommendations (see original paper and vignette) we use smoothing of
+the CNA object (by calling an internal version of smooth.CNA with all
+default parameters).
+
+
+
+HMM
+
+We use package aCGH, version 1.22.0, and use the function find.hmm.states
+with all default parameters except, possibly, aic and bic, which the user
+can choose. As with DNAcopy, and following Willenbrock and Fridlyand, we
+use mergeLevels on the output.
+
+
+BioHMM
+
+We use package snapCGH v. 1.16.0 and call the function fit.model with
+default parameters except, possibly, aic and bic, which the user
+can choose. We use mergeLevels on the output with all default parameters.
+
+
+
+CGHseg
+
+Note that, incorrectly, many papers state that they use CGHseg when using
+the segment function in the tilingArray package. That, however, is not
+correct, since it falls short of using the penalization procedure that
+Picard et al. developed and recommended. We have implemented CGHseg as
+described in the original paper, by using the segment function in
+tilingArray (v. 1.24.0) and then finding the optimal number of segments
+with the penalization scheme developed by Picard et al. The only parameter
+of this method is the threshold for the adaptive penalization in Picard et
+al.'s CGHseg. See p. 13 of the original paper. The default value used in
+the original reference is -0.5. However, our experience with the simulated
+data in Willenbrock and Fridlyand (2005) indicates that for those data
+values around -0.005 are more appropriate. We use here -0.05 as
+default. After segmentation, we use calling using the MAD approach (see
+HaarSeg, above).
+
+
+Wavelets
+
+We use R code originally provided by Li Hsu. We use all default parameters
+of this method. There is no R package, aside from our, that provides a
+canonical implementation of this method. We use the same default
+parameters as those available from our ADaCGH package from CRAN.  (minDiff
+= 0.25, minMergeDiff = 0.05, thrLvl = 3, initClusterLevels = 10). After
+segmentation, we use calling using the MAD approach (see HaarSeg, above).
+
+
+
+
+Availability:
+
+All the code for our package and additional scripts are available from
+http://launchpad.net/adacgh

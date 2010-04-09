@@ -443,15 +443,19 @@ WaviOptions <- checkConvertMethodOptions(methodOptions, WaviOptions)
 try2 <- try({
   
   if(WaviOptions$method == "HaarSeg") {
-    WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
-  } else {
-    if(!is.null(WaviOptions$mad.threshold)) {
-      WaviOptions$mad.threshold <- as.numeric(WaviOptions$mad.threshold)
-    } else {
-      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS mad.threshold\n\n\n")
-      WaviOptions$mad.threshold <- 3
+    if(!is.null(WaviOptions$HaarSeg.m)) {
+      cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS mad.threshold in HaarSeg\n\n\n")
+      WaviOptions$mad.threshold <- WaviOptions$HaarSeg.m
     }
   }
+  
+  if(!is.null(WaviOptions$mad.threshold)) {
+    WaviOptions$mad.threshold <- as.numeric(WaviOptions$mad.threshold)
+  } else {
+    cat("\n\n\n WARNING!!!! OLD FORMAT FOR OPTIONS mad.threshold\n\n\n")
+    WaviOptions$mad.threshold <- 2
+  }
+  
   
   
   
