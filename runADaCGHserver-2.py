@@ -36,7 +36,7 @@ import fcntl
 # import counterApplications
 
 
-R_MAX_time = 196 * 3600 ## 12 hours is max duration allowd for any process
+R_MAX_time = 24 * 3 * 3600 ## 3 days is max duration allowd for any process
 TIME_BETWEEN_CHECKS = 23
 MAX_MPI_CRASHES = 20
 

@@ -72,7 +72,8 @@ done
 echo 
 echo
 echo
-echo "Verify output"
+echo  "****************"
+echo "                Verify output"
 echo  "****************"
 
 
@@ -85,7 +86,8 @@ done
 
 
 echo
-echo "Verify output older format"
+echo  "****************"
+echo "**************         Verify output older format"
 echo  "****************"
 
 
@@ -99,7 +101,8 @@ done
 
 
 echo
-echo "Verify output several identical"
+echo  "****************"
+echo "*********     Verify output several identical *********"
 echo  "****************"
 
 

@@ -394,8 +394,16 @@ if (.__ADaCGH_SERVER_APPL) {
   new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
   new.name <- paste("R.", new.name1, "%", pid, sep = "")
   new.name1 <- paste("R.", new.name1, sep = "")
-  system(paste("mv ../../R.running.procs/", new.name1,
-               " ../../R.running.procs/", new.name,
+
+##   cat("el getwd")
+## print(getwd())
+
+## cat("los newnames\n")
+## print(new.name)
+## print(new.name1)
+
+  system(paste("mv /http/adacgh-server/runs-tmp/R.running.procs/", new.name1,
+               " /http/adacgh-server/runs-tmp/R.running.procs/", new.name,
                sep = ""))
   
   checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
