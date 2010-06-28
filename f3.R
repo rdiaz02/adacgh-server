@@ -149,7 +149,10 @@ put.part.rdata.together <- function(i, pos.start, pos.end) {
     close(chromData)
     rm(chromData)
   }))
-        
+  if(length(unique(chrs.part)) > 1)
+    stop("oh, oh, something wrong in chrs.part")
+  thisChr <- chrs.part[1]
+  
   print(system.time( {
     
     load("posData.RData")
@@ -165,7 +168,8 @@ put.part.rdata.together <- function(i, pos.start, pos.end) {
     
     load("segmres.RData")
     open(segmres[[2]], readonly = TRUE)
-    oname <- paste("calls.out.", i, sep = "")
+    ## used to be "i" instead of thisChr
+    oname <- paste("calls.out.", thisChr, sep = "")
     assign(oname,
            data.frame(
                       ProbeName = probeNames,
@@ -183,7 +187,8 @@ put.part.rdata.together <- function(i, pos.start, pos.end) {
   print(system.time( {
     
     open(segmres[[1]], readonly = TRUE)
-    oname <- paste("segmented.out.", i, sep = "")
+    ## used to be "i" instead of thisChr
+    oname <- paste("segmented.out.", thisChr, sep = "") 
     assign(oname,
            data.frame(
                       ProbeName = probeNames,
@@ -202,7 +207,8 @@ put.part.rdata.together <- function(i, pos.start, pos.end) {
     
     load("cghData.RData")
     open(cghData, readonly = TRUE)
-    oname <- paste("original.", i, sep = "")
+    ## used to be "i" instead of thisChr
+    oname <- paste("original.", thisChr, sep = "")
     assign(oname,
            data.frame(
                       ProbeName = probeNames,
@@ -229,31 +235,39 @@ new.custom2 <- function(segmresRDataName = "segmres.RData",
                        nround = 6) {
 
   load(chromRDataName)
+  open(chromData, readonly = TRUE)
   rle.chr <- intrle(as.integer(chromData[]))
+  if(is.null(rle.chr)) rle.chr <- rle(as.integer(chrom))
   chr.end <- cumsum(rle.chr$lengths)
   chr.start <- c(1, chr.end[-length(chr.end)] + 1)
   seqc <- seq.int(1, length(chr.start))
 
+  chromNames <- rle.chr$values
+  
   null <- sfClusterApplyLB(seqc, put.part.rdata.together,
                            chr.start, chr.end)
 
   ## using OS cat all calls and segmented
+##   os.call.1 <- paste("cat ",
+##                      paste("calls.out.", seqc, ".txt", sep = "", collapse = " "),
+##                      " > calls.out.txt")
   os.call.1 <- paste("cat ",
-                     paste("calls.out.", seqc, ".txt", sep = "", collapse = " "),
+                     paste("calls.out.", chromNames, ".txt", sep = "", collapse = " "),
                      " > calls.out.txt")
+
   system(os.call.1)
 
-  system("head -1 calls.out.1.txt > tmphead")
+  system(paste("head -1 calls.out.", chromNames[1], ".txt > tmphead", sep = ""))
   system("grep -P -f tmphead -v calls.out.txt > tmp.calls.out.txt")
   system("cat tmphead tmp.calls.out.txt > calls.out.txt")
   system("chmod 777 calls.out.txt")
   system("rm tmp.calls.out.txt")
   
   os.call.2 <- paste("cat ",
-                     paste("segmented.out.", seqc, ".txt", sep = "", collapse = " "),
+                     paste("segmented.out.", chromNames, ".txt", sep = "", collapse = " "),
                      " > segmented.out.txt")
   system(os.call.2)
-  system("head -1 segmented.out.1.txt > tmphead")
+  system(paste("head -1 segmented.out.", chromNames[1], ".txt > tmphead", sep = ""))
   system("grep -P -f tmphead -v segmented.out.txt > tmp.segmented.out.txt")
   system("cat tmphead tmp.segmented.out.txt > segmented.out.txt")
   system("chmod 777 segmented.out.txt")
