@@ -37,10 +37,9 @@ MAX_DURATION_TRY = 24 * 3600 # my_queue
 appProcs     = appDir + '/runs-tmp'
 logsDir      = appProcs + '/logs'
 runningProcs = appProcs + '/R.running.procs'
-tmpDD        = appProcs + '/tmp'
 
 
-inputDir = sys.argv[1]
+tmpDir = sys.argv[1]
 
 
 def add_to_log(applicacion, tmpDir, hostname):
@@ -80,13 +79,13 @@ def writeErrorMessage(message = '', infile = 'R_Error_msg.txt',
         pass
 
     
-def create_tmpDir(baseDir = tmpDD):
-    """ Create a new directory with appropriate permissions"""
-    newDir = str(random.randint(1, 10000000)) + str(int(time.time())) + str(os.getpid())
-    tmpDir = baseDir + "/" + newDir
-    os.mkdir(tmpDir)
-    os.chmod(tmpDir, 0700)
-    return (newDir, tmpDir)
+# def create_tmpDir(baseDir = tmpDD):
+#     """ Create a new directory with appropriate permissions"""
+#     newDir = str(random.randint(1, 10000000)) + str(int(time.time())) + str(os.getpid())
+#     tmpDir = baseDir + "/" + newDir
+#     os.mkdir(tmpDir)
+#     os.chmod(tmpDir, 0700)
+#     return (newDir, tmpDir)
 
 def issue_echo(fecho, tmpDir):
     """Silly function to output small tracking files"""
@@ -222,12 +221,11 @@ def my_queue(MAX_NUM_PROCS,
 ######################################################################
 
 ## Starting. First, the very first run.
-
-tmpDir = inputDir
 tmp1 = tmpDir.split('/')
 newDir = tmp1[len(tmp1) - 1]
 
 
+add_to_log("Wavi", tmpDir, socket.gethostname())
 print tmpDir
 
 os.system('echo "' + str(os.getpid()) + ' ' + socket.gethostname() +\
