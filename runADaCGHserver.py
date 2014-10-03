@@ -30,7 +30,7 @@ import random
 import socket
 import fcntl
 
-# sys.path = sys.path + ['/http/mpi.log']
+# sys.path = sys.path + ['/asterias-web-apps/mpi.log']
 # import counterApplications
 
 
@@ -42,19 +42,19 @@ MAX_MPI_CRASHES = 20
 #tmpDir = sys.argv[1]
 inputDir = sys.argv[1]
 
-#ROOT_TMP_DIR = "/http/adacgh2/www/tmp/"
+#ROOT_TMP_DIR = "/asterias-web-apps/adacgh2/www/tmp/"
 #newDir = tmpDir.replace(ROOT_TMP_DIR, "")
 
-appDir       = "/http/adacgh-server"
+appDir       = "/asterias-web-apps/adacgh-server"
 appProcs     = appDir + '/runs-tmp'
 runningProcs = appProcs + '/R.running.procs'
 tmpDD        = appProcs + '/tmp'
-logsDir      = '/http/adacgh-server/runs-tmp/logs/'
+logsDir      = '/asterias-web-apps/adacgh-server/runs-tmp/logs/'
 
 
 #########################################################
 
-####  These are copied from /http/mpi.log/counterApplications.py
+####  These are copied from /asterias-web-apps/mpi.log/counterApplications.py
 ####     but I put code and paths here, for better self containment
 
 
@@ -89,7 +89,7 @@ def add_to_MPIErrorLog(application, tmpDir, hostname, message = 'MPI crash'):
 def add_to_LAM_SUFFIX_LOG(lamSuffix, application, tmpDir, hostname,
                           Rprocess = 'RprocessPid'):
 #     if not os.path.exists(logsDir + 'LAM_SUFFIX_Log'):
-#         os.system('touch /http/mpi.log/LAM_SUFFIX_Log')
+#         os.system('touch /asterias-web-apps/mpi.log/LAM_SUFFIX_Log')
     outlog = open(logsDir + 'LAM_SUFFIX_Log', mode = 'a')
     fcntl.flock(outlog.fileno(), fcntl.LOCK_SH)
     outlog.write(Rprocess + '\t' + lamSuffix + '\t' +
@@ -309,7 +309,7 @@ def lamboot(lamSuffix, ncpu, runningProcs = runningProcs):
                        os.O_RDWR | os.O_CREAT | os.O_NDELAY)
     issue_echo('before fullCommand inside lamboot', tmpDir)
     fullCommand = 'export LAM_MPI_SESSION_SUFFIX="' + lamSuffix + \
-                  '"; /http/mpi.log/tryBootLAM2.py ' + lamSuffix + \
+                  '"; /asterias-web-apps/mpi.log/tryBootLAM2.py ' + lamSuffix + \
                   ' ' + str(ncpu)
     issue_echo('before os.system inside lamboot', tmpDir)
     lboot = os.system(fullCommand)
@@ -403,7 +403,7 @@ def Rrun(tmpDir, lamSuffix):
     Rcommand = 'export LAM_MPI_SESSION_SUFFIX="' + lamSuffix + \
                '"; cd ' + tmpDir + \
                '; sleep 1; /var/www/bin/R-local-7-LAM-MPI/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> R_Status.txt &'
-##               '; sleep 1; /http/R-custom/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> Status.msg &'
+##               '; sleep 1; /asterias-web-apps/R-custom/bin/R --no-readline --no-save --slave <f1.R >>f1.Rout 2>> Status.msg &'
     Rtorun = os.system(Rcommand)
     
 ### FIXME: something potentially weird here:
@@ -606,7 +606,7 @@ def my_queue(MAX_NUM_PROCS,
 ## We no longer check for room!!
     return out_value
 #     while True:
-# ##        killedlamandr = os.system('/http/mpi.log/killOldLamAllMachines.py')
+# ##        killedlamandr = os.system('/asterias-web-apps/mpi.log/killOldLamAllMachines.py')
 #         issue_echo('     inside my_queue ', tmpDir)
 #         if (time.time() - startTime) > MAX_DURATION_TRY:
 #             out_value = 'Failed'
@@ -645,7 +645,7 @@ def generate_lam_suffix(tmpDir):
 
 
 ## Clean up lam
-os.system('/http/mpi.log/killOldLam.py')
+os.system('/asterias-web-apps/mpi.log/killOldLam.py')
 
 
 ##(newDir, tmpDir) = create_tmpDir()
@@ -810,7 +810,7 @@ while True:
 issue_echo('before LAM clean up', tmpDir)
 
 ## Clean up lam systemwide (a favor for future runs)
-os.system('/http/mpi.log/killOldLamAllMachines.py')
+os.system('/asterias-web-apps/mpi.log/killOldLamAllMachines.py')
 
 issue_echo('at the very end!', tmpDir)
 

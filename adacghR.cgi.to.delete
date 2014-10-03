@@ -265,7 +265,7 @@ def radioUpload(fieldName, acceptedValues):
 #         time.sleep(tsleep)
 #         in_log = int(os.popen('grep "' + \
 #                               tmpDir + \
-#                               '" /http/mpi.log/ApplicationCounter | wc').readline().split()[0])
+#                               '" /asterias-web-apps/mpi.log/ApplicationCounter | wc').readline().split()[0])
 #         if in_log == 0:
 #             leave_track = os.system('/bin/touch ' + tmpDir + \
 #                                     '/had_to_restart_' + str(i + 1))
@@ -277,7 +277,7 @@ def radioUpload(fieldName, acceptedValues):
 #                 print "</body></html>"
 #                 sys.exit()
 #             else:
-#                 tryrrun = os.system('/http/mpi.log/tryRrun5.py ' + tmpDir + ' ADaCGH &')
+#                 tryrrun = os.system('/asterias-web-apps/mpi.log/tryRrun5.py ' + tmpDir + ' ADaCGH &')
                 
 #         else:
 #             break
@@ -299,9 +299,9 @@ def radioUpload(fieldName, acceptedValues):
 ## NOT needed anymore; delete_old_dirs runs as cron job!
 #  YES: we are using it again!! cron-jobs are harder to keep track of
 currentTime = time.time()
-currentTmp = dircache.listdir("/http/adacgh2/www/tmp")
+currentTmp = dircache.listdir("/asterias-web-apps/adacgh2/www/tmp")
 for directory in currentTmp:
-    tmpS = "/http/adacgh2/www/tmp/" + directory
+    tmpS = "/asterias-web-apps/adacgh2/www/tmp/" + directory
     if (currentTime - os.path.getmtime(tmpS)) > MAX_time:
         shutil.rmtree(tmpS)
 #       print("\n deleting directory " + tmpS + "\n")
@@ -311,7 +311,7 @@ for directory in currentTmp:
 ### Creating temporal directories
 newDir = str(random.randint(1, 10000)) + str(os.getpid()) + str(random.randint(1, 100000)) + str(int(currentTime)) + str(random.randint(1, 10000))
 redirectLoc = "/tmp/" + newDir
-tmpDir = "/http/adacgh2/www/tmp/" + newDir
+tmpDir = "/asterias-web-apps/adacgh2/www/tmp/" + newDir
 os.mkdir(tmpDir)
 os.chmod(tmpDir, 0700)
 
@@ -369,9 +369,9 @@ if twofiles == 'Two.files':
         ##debugg:
         os.system("echo " + prep_tmpdir + " > " + tmpDir + "/prep_tmpdir")
             ## an ugly hack, as prep not in this filesystem
-        os.system('wget http://prep.bioinfo.cnio.es/tmp/' + prep_tmpdir +
+        os.system('wget http://prep.iib.uam.es/tmp/' + prep_tmpdir +
                   '/outdata.txt -O ' + tmpDir + '/acghData')
-       ###shutil.copy("/http/prep/www/tmp/" + prep_tmpdir +"/outdata.txt",tmpDir + "/acghData")
+       ###shutil.copy("/asterias-web-apps/prep/www/tmp/" + prep_tmpdir +"/outdata.txt",tmpDir + "/acghData")
     else:
         fileUpload('acghData')
         if os.stat(tmpDir + '/acghData')[ST_SIZE] > MAX_covariate_size:
@@ -421,14 +421,14 @@ elif twofiles == 'One.file':
 
 
 ## First, delete any R file left (e.g., from killing procs, etc).
-RrunningFiles = dircache.listdir("/http/adacgh2/www/R.running.procs")
+RrunningFiles = dircache.listdir("/asterias-web-apps/adacgh2/www/R.running.procs")
 for Rtouchfile in RrunningFiles:
-    tmpS = "/http/adacgh2/www/R.running.procs/" + Rtouchfile
+    tmpS = "/asterias-web-apps/adacgh2/www/R.running.procs/" + Rtouchfile
     if (currentTime - os.path.getmtime(tmpS)) > R_MAX_time:
         os.remove(tmpS)
 
 ## Now, verify any processes left
-numRadacgh = len(dircache.listdir("/http/adacgh2/www/R.running.procs"))
+numRadacgh = len(dircache.listdir("/asterias-web-apps/adacgh2/www/R.running.procs"))
 if numRadacgh > MAX_adacgh:
     shutil.rmtree(tmpDir)
     commonOutput()
@@ -594,9 +594,9 @@ tmp = os.system("cd " + tmpDir + """; sed "s/'//g" arrayNames > tmp234; mv tmp23
 
 ## touch Rout, o.w. checkdone can try to open a non-existing file
 touchRout = os.system("/bin/touch " + tmpDir + "/f1.Rout") 
-touchRrunning = os.system("/bin/touch /http/adacgh2/www/R.running.procs/R." + newDir +
+touchRrunning = os.system("/bin/touch /asterias-web-apps/adacgh2/www/R.running.procs/R." + newDir +
                           "@" + socket.gethostname())
-shutil.copy("/http/adacgh2/cgi/f1.R", tmpDir)
+shutil.copy("/asterias-web-apps/adacgh2/cgi/f1.R", tmpDir)
 checkpoint = os.system("echo 0 > " + tmpDir + "/checkpoint.num")
 createResultsFile = os.system("/bin/touch " + tmpDir + "/results.txt")
 
@@ -605,14 +605,14 @@ createResultsFile = os.system("/bin/touch " + tmpDir + "/results.txt")
 ## error is sent to the server
 # Rcommand = "cd " + tmpDir + "; " + "/usr/bin/R CMD BATCH --no-restore --no-readline --no-save -q f1.R 2> error.msg &"
 # Rrun = os.system(Rcommand)
-##os.system('cp /http/js/js.adacgh.squeleton1.html ' + tmpDir + '/.')
-##os.system('cp /http/js/js.adacgh.squeleton2.html ' + tmpDir + '/.')
-##os.system('cp /http/js/final.adacgh.squeleton.html ' + tmpDir + '/.')
+##os.system('cp /asterias-web-apps/js/js.adacgh.squeleton1.html ' + tmpDir + '/.')
+##os.system('cp /asterias-web-apps/js/js.adacgh.squeleton2.html ' + tmpDir + '/.')
+##os.system('cp /asterias-web-apps/js/final.adacgh.squeleton.html ' + tmpDir + '/.')
 
-## tryrrun = os.system('/http/mpi.log/tryRrun5.py ' + tmpDir + ' ADaCGH &')
+## tryrrun = os.system('/asterias-web-apps/mpi.log/tryRrun5.py ' + tmpDir + ' ADaCGH &')
 
 ## Launch the lam checking program 
-run_and_check = os.spawnv(os.P_NOWAIT, '/http/adacgh2/cgi/runAndCheck.py',
+run_and_check = os.spawnv(os.P_NOWAIT, '/asterias-web-apps/adacgh2/cgi/runAndCheck.py',
                       ['', tmpDir])
 os.system('echo "' + str(run_and_check) + ' ' + socket.gethostname() +\
            '"> ' + tmpDir + '/run_and_checkPID')
@@ -626,7 +626,7 @@ os.system('echo "' + str(run_and_check) + ' ' + socket.gethostname() +\
 ## Copy to tmpDir a results.html that redirects to checkdone.cgi
 ## If communication gets broken, there is always a results.html
 ## that will do the right thing.
-shutil.copy("/http/adacgh2/cgi/results-pre.html", tmpDir)
+shutil.copy("/asterias-web-apps/adacgh2/cgi/results-pre.html", tmpDir)
 os.system("/bin/sed 's/sustituyeme/" + newDir + "/g' " +
           tmpDir + "/results-pre.html > " +
           tmpDir + "/results.html; rm " +
