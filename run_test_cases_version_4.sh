@@ -5,6 +5,8 @@
 #### MAD, whereas those for version 1
 #### use mergelevels. 
 
+### Recall several-large has not RData in the repo, so the test might fail
+
 rm -r -f ./runs-tmp/tmp-3/*
 rm -r -f ./runs-tmp/tmp-3-older-format/*
 

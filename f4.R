@@ -20,9 +20,6 @@
 ######################################################################
 
 
-### FIXME: qué pasa con un solo array o un solo chrom???
-
-
 ## Change this for your setting
 appProcs <- "/asterias-web-apps/adacgh-server"
 
@@ -30,7 +27,62 @@ runningProcs <- paste(appProcs, "/runs-tmp/R.running.procs", sep = "")
 logsDir      <- paste(appProcs, "/runs-tmp/logs", sep = "")
 
 
+
+
+
+########################################
+
+
+
 assign(".__ADaCGH_SERVER_APPL", TRUE)
+
+
+## Do immediately, because package loading takes some time
+if (.__ADaCGH_SERVER_APPL) {
+  version
+  system("date")
+  system("hostname")
+  cat("\nRunning\n", file = "R_Status.txt")
+  hostn <- system("hostname", intern = TRUE)
+  pid <- Sys.getpid()
+  cat("\nPID is ", pid, "\n")
+  
+  startExecTime <- format(Sys.time())
+  write.table(file = "pid.txt", pid,
+              row.names = FALSE,
+              col.names = FALSE)
+  
+  sink(file = "current_R_proc_info")
+  cat(hostn)
+  cat("  ")
+  cat(pid)
+  cat("\n")
+  sink()
+
+## attach pid to name in R.running.procs
+  new.name1 <- unlist(strsplit(getwd(), "/"))
+  new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
+  new.name <- paste("R.", new.name1, "%", pid, sep = "")
+  new.name1 <- paste("R.", new.name1, sep = "")
+
+##   cat("el getwd")
+## print(getwd())
+
+## cat("los newnames\n")
+## print(new.name)
+## print(new.name1)
+
+  try(system(paste("mv ", runningProcs, "/", new.name1, " ",
+               runningProcs, "/", new.name,
+               sep = "")))
+  
+  checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
+} else {
+  checkpoint.num <- 0
+}
+
+
+
 
 
 library(ADaCGH2, verbose = FALSE)
@@ -287,154 +339,6 @@ new.custom2 <- function(segmresRDataName = "segmres.RData",
 
 
 
-## new.custom <- function(segmresRDataName = "segmres.RData",
-##                        cghRDataName = "cghData.RData",
-##                        chromRDataName = "chromData.RData",
-##                        posRDataName = "posData.RData",
-##                        probeNamesRDataName = "probeNames.RData",
-##                        nround = 6) {
-##   load(posRDataName)
-##   load(chromRDataName)
-##   load(cghRDataName)
-##   load(segmresRDataName)
-##   load(probeNamesRDataName)
-  
-##   narrays <- ncol(segmres[[1]])
-##   seqi <- seq.int(1, narrays)
-
-##   if(!is.factor(probeNames))
-##     probeNames <- factor(probeNames)
-  
-##   list.1 <- list(ProbeName = as.ff(probeNames, vmode = NULL),
-##                  Chr = chromData,
-##                  Position = posData)
-##   ## close(list.1[[1]]) ## Don't close; must be open for
-##   ## later writing
-##   rm(probeNames)
-##   gc()
-##   l.smoothed <- lapply(seqi,
-##                        function(i) segmres[[1]][[i]])
-##   l.calls <- lapply(seqi,
-##                     function(i) segmres[[2]][[i]])
-##   l.original <- lapply(seqi,
-##                        function(i) cghData[[i]])
-
-##   names(l.smoothed) <- names(l.calls) <- names(l.original) <-
-##     names(segmres[[1]])
-
-##   l.smoothed <- c(list.1, l.smoothed)
-##   l.calls <- c(list.1, l.calls)
-##   l.original <- c(list.1, l.original)
-
-##   segmentedffdf <- do.call("ffdf", l.smoothed)
-##   callsffdf <- do.call("ffdf", l.calls)
-##   originalffdf <- do.call("ffdf", l.original)
-
-##   callsffdf.no.names <- do.call("ffdf", l.calls[-1])
-  
-##   open(segmentedffdf)
-##   open(callsffdf)
-##   open(originalffdf)
-  
-##   ## write.table.ffdf(segmentedffdf, file = "segmented.out.txt",
-##   ##                  sep = "\t", quote = FALSE)
-##   ## write.table.ffdf(callsffdf, file = "calls.out.txt",
-##   ##                  sep = "\t", quote = FALSE)
-
-
-##   ############  Change this to something faster/better/before
-##   ############  How does it work with many columns?
-##   ############  Could use same logic for chromosome and position
-##   write("ProbeName", file = "pn2.txt")
-##   write(probeNames, file = "pn2.txt",
-##         append = TRUE)
-##   write.table.ffdf(callsffdf.no.names, file = "call.no.name.txt",
-##                    sep = "\t", quote = FALSE)
-##   system("paste pn2.txt call.no.name,txt > calls.out.txt")
-##   #################################
-
-  
-##   rle.chr <- intrle(as.integer(chromData[]))
-##   chr.end <- cumsum(rle.chr$lengths)
-##   chr.start <- c(1, chr.end[-length(chr.end)] + 1)
-##   seqc <- seq.int(1, length(chr.start))
-
-##   f1 <- function(i,  objectin, nameout) {
-##     oname <- paste(nameout, i, sep = "")
-##     assign(oname,
-##            objectin[ri(chr.start[i], chr.end[i]), ])
-##     save(file = paste(oname, ".RData", sep = ""),
-##          list = c(oname), compress = FALSE)
-##   }
-
-##   ## the following three lines take their time!!
-##   ## parallelize!! yes, via clusterApplyLB??
-##   null <- sapply(seqc, f1, segmentedffdf, "segmented.out.")
-##   null <- sapply(seqc, f1, callsffdf, "calls.out.")
-##   null <- sapply(seqc, f1, originalffdf, "original.")
-  
-##   null <- close(segmentedffdf)
-##   null <- close(callsffdf)
-##   null <- close(originalffdf)
-##   return(0)
-## }
-  
-
-
-
-
-##############################################
-##############################################
-######                              ##########
-######         Start execution      ##########
-######                              ##########
-##############################################
-##############################################
-
-if (.__ADaCGH_SERVER_APPL) {
-  version
-  system("date")
-  system("hostname")
-  cat("\nRunning\n", file = "R_Status.txt")
-  hostn <- system("hostname", intern = TRUE)
-  pid <- Sys.getpid()
-  cat("\nPID is ", pid, "\n")
-  
-  startExecTime <- format(Sys.time())
-  write.table(file = "pid.txt", pid,
-              row.names = FALSE,
-              col.names = FALSE)
-  
-  sink(file = "current_R_proc_info")
-  cat(hostn)
-  cat("  ")
-  cat(pid)
-  cat("\n")
-  sink()
-
-## attach pid to name in R.running.procs
-  new.name1 <- unlist(strsplit(getwd(), "/"))
-  new.name1 <- paste(new.name1[length(new.name1)], "@", hostn, sep = "")
-  new.name <- paste("R.", new.name1, "%", pid, sep = "")
-  new.name1 <- paste("R.", new.name1, sep = "")
-
-##   cat("el getwd")
-## print(getwd())
-
-## cat("los newnames\n")
-## print(new.name)
-## print(new.name1)
-
-  try(system(paste("mv ", runningProcs, "/", new.name1, " ",
-               runningProcs, "/", new.name,
-               sep = "")))
-  
-  checkpoint.num <- scan("checkpoint.num", what = double(0), n = 1)
-} else {
-  checkpoint.num <- 0
-}
-
-
 #######################################################
 #######################################################
 #######################################################
@@ -493,12 +397,25 @@ try2 <- try({
   if(is.null(WaviOptions[["merge"]])) {
     if(WaviOptions$method == "DNAcopy")
       WaviOptions$merge <- "mergeLevels"
+
+    if(WaviOptions$method == "HaarSeg")
+      WaviOptions$merge <- "MAD"
+
+    
+    if(WaviOptions$method == "BioHMM")
+      WaviOptions$merge <- "mergeLevels"
+
+    if(WaviOptions$method == "HMM")
+      WaviOptions$merge <- "mergeLevels"
+
     if(WaviOptions$method == "CGHseg") 
       WaviOptions$merge <- "MAD"
+
     if(WaviOptions$method == "Wavelets")
       WaviOptions$merge <- "MAD"
   }
 
+  
   if(!is.null(WaviOptions$DNAcopy.min.width)) {
     WaviOptions$DNAcopy.min.width <- as.numeric(WaviOptions$DNAcopy.min.width)
     if((WaviOptions$DNAcopy.min.width > 5) |
